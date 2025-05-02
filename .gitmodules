@@ -1,0 +1,3 @@
+[submodule "shares-profit-loss-tax"]
+	path = shares-profit-loss-tax
+	url = https://github.com/e-tang/shares-profit-loss-tax
