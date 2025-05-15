@@ -15,7 +15,7 @@ interface FileUploadFormProps {
 }
 
 export default function FileUploadForm({ onCalculate, isLoading }: FileUploadFormProps) {
-  const [file, setFile] = useState<File | null>(null)
+  const [files, setFiles] = useState<File[]>([]);
   const [dragActive, setDragActive] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -36,22 +36,65 @@ export default function FileUploadForm({ onCalculate, isLoading }: FileUploadFor
     setDragActive(false)
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setFile(e.dataTransfer.files[0])
+      handleFiles(Array.from(e.dataTransfer.files));
     }
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0])
+    if (e.target.files) {
+      handleFiles(Array.from(e.target.files));
     }
   }
+
+  const handleFiles = (selectedFiles: File[]) => {
+    setFiles(selectedFiles);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!file) return
+    if (!files || files.length === 0) return
 
-    Papa.parse(file, {
+    Promise.all(
+      files.map(file => {
+        return new Promise<Trade[]>((resolve, reject) => {
+          if (file.type === "text/csv" || file.name.endsWith(".csv")) {
+            Papa.parse(file, {
+              header: true,
+              complete: (results) => {
+                try {
+                  const normalizedData = normalizeTradeData(results.data as any);
+                  resolve(normalizedData);
+                } catch (error) {
+                  console.error("Error normalizing data:", error);
+                  reject(error);
+                }
+              },
+              error: (error) => {
+                console.error("Error parsing CSV:", error);
+                reject(error);
+              },
+            });
+          } else {
+            reject(new Error("Invalid file type. Only CSV files are supported."));
+          }
+        });
+      })
+    )
+    .then(allNormalizedData => {
+      // Combine data from all files
+      const combinedData: Trade[] = allNormalizedData.flat();
+      onCalculate(combinedData);
+    })
+    .catch(error => {
+      console.error("Error processing files:", error);
+      // Handle the error, perhaps by setting an error state
+      // and displaying a message to the user.
+    });
+  }
+
+  const processFile = (file: File) => {
+    return new Promise<Trade[]>((resolve, reject) => {
       header: true,
       complete: (results) => {
         const normalizedData = normalizeTradeData(results.data)
@@ -62,12 +105,13 @@ export default function FileUploadForm({ onCalculate, isLoading }: FileUploadFor
       },
     })
   }
+  }
 
   return (
     <form onSubmit={handleSubmit}>
       <div
         className={`border-2 border-dashed rounded-lg p-8 text-center ${
-          dragActive ? "border-primary bg-primary/5" : "border-muted-foreground/25"
+          dragActive ? "border-primary bg-primary/5" : isLoading ? "border-primary/50 bg-primary/5" : "border-muted-foreground/25"
         }`}
         onDragEnter={handleDrag}
         onDragOver={handleDrag}
@@ -76,29 +120,39 @@ export default function FileUploadForm({ onCalculate, isLoading }: FileUploadFor
       >
         <input ref={fileInputRef} type="file" accept=".csv" onChange={handleFileChange} className="hidden" />
 
-        <Upload className="h-10 w-10 mx-auto mb-4 text-muted-foreground" />
+        {isLoading ? (
+          <Loader2 className="h-10 w-10 mx-auto mb-4 text-primary animate-spin"/>
+        ) : (
+          <Upload className="h-10 w-10 mx-auto mb-4 text-muted-foreground"/>
+        )}
 
-        <h3 className="text-lg font-medium mb-2">{file ? file.name : "Upload your CSV file"}</h3>
+        <h3 className="text-lg font-medium mb-2">
+          {isLoading ? "Processing..." : files.length > 0 ? `${files.length} files selected` : "Upload your CSV file(s)"}
+        </h3>
 
         <p className="text-sm text-muted-foreground mb-4">
-          {file ? `${(file.size / 1024).toFixed(2)} KB - CSV File` : "Drag and drop your file here, or click to browse"}
+          {file 
+            ? isLoading 
+              ? "Analyzing your trades, please wait..." 
+              : `${(file.size / 1024).toFixed(2)} KB - CSV File`
+            : "Drag and drop your file here, or click to browse"
+          }
         </p>
 
-        <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="mb-4">
-          Select File
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={() => fileInputRef.current?.click()} 
+          className="mb-4 "
+          disabled={isLoading}
+        >
+          Select Files
         </Button>
 
-        {file && (
+        {file && !isLoading && (
           <div className="mt-4">
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                "Calculate Profit/Loss"
-              )}
+            <Button type="submit">
+              Calculate Profit/Loss
             </Button>
           </div>
         )}

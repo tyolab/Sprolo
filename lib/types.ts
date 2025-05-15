@@ -1,3 +1,5 @@
+export type BrokerType = "CommSec" | "FPMarkets" | "Any"
+
 export interface Trade {
   symbol: string
   side: "buy" | "sell"

@@ -9,12 +9,20 @@ import { ArrowLeft } from "lucide-react"
 import FileUploadForm from "@/components/file-upload-form"
 import TextInputForm from "@/components/text-input-form"
 import ResultsDisplay from "@/components/results-display"
-import type { Trade, CalculationResult } from "@/lib/types"
+import type { Trade, CalculationResult, BrokerType } from "@/lib/types"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export default function CalculatePage() {
   const [isLoading, setIsLoading] = useState(false)
   const [results, setResults] = useState<CalculationResult | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [selectedBroker, setSelectedBroker] = useState<BrokerType>("Any")
 
   const handleCalculate = async (data: Trade[]) => {
     setIsLoading(true)
@@ -26,7 +34,7 @@ export default function CalculatePage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ trades: data }),
+        body: JSON.stringify({ trades: data, broker: selectedBroker }),
       })
 
       if (!response.ok) {
@@ -73,11 +81,26 @@ export default function CalculatePage() {
 
         <Card>
           <CardContent className="pt-6">
-            <Tabs defaultValue="upload">
-              <TabsList className="mb-4">
-                <TabsTrigger value="upload">Upload CSV</TabsTrigger>
-                <TabsTrigger value="paste">Paste Data</TabsTrigger>
-              </TabsList>
+          <div className="flex justify-end items-center mt-4">
+              <div className="mr-4">
+                <Select value={selectedBroker} onValueChange={(value) => setSelectedBroker(value as BrokerType)}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Select broker" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CommSec">CommSec</SelectItem>
+                    <SelectItem value="FPMarkets">FP Markets</SelectItem>
+                    <SelectItem value="Any">Any Broker</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+              <Tabs defaultValue="upload" className="flex-1">
+                <TabsList>
+                  <TabsTrigger value="upload">Upload CSV</TabsTrigger>
+                  <TabsTrigger value="paste">Paste Data</TabsTrigger>
+                </TabsList>
+              
 
               <TabsContent value="upload">
                 <FileUploadForm onCalculate={handleCalculate} isLoading={isLoading} />
@@ -85,8 +108,9 @@ export default function CalculatePage() {
 
               <TabsContent value="paste">
                 <TextInputForm onCalculate={handleCalculate} isLoading={isLoading} />
-              </TabsContent>
+            </TabsContent>
             </Tabs>
+
           </CardContent>
         </Card>
 

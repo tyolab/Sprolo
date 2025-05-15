@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server"
-import type { Trade, CalculationResult, SymbolSummary } from "@/lib/types"
+import type { Trade, CalculationResult, SymbolSummary, BrokerType } from "@/lib/types"
 
 export async function POST(request: Request) {
   try {
-    const { trades } = await request.json()
+    const { trades, broker = "Any" } = await request.json()
 
     if (!trades || !Array.isArray(trades) || trades.length === 0) {
       return NextResponse.json({ error: "Invalid or empty trades data" }, { status: 400 })
     }
 
     // Process the trades to calculate profit/loss
-    const result = calculateProfitLoss(trades)
+    const result = calculateProfitLoss(trades, broker)
 
     return NextResponse.json(result)
   } catch (error) {
@@ -19,7 +19,8 @@ export async function POST(request: Request) {
   }
 }
 
-function calculateProfitLoss(trades: Trade[]): CalculationResult {
+function calculateProfitLoss(trades: Trade[], broker: BrokerType = "Any"): CalculationResult {
+  console.log(`Calculating profit/loss using broker: ${broker}`)
   // Sort trades by date
   const sortedTrades = [...trades].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
