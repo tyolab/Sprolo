@@ -24,7 +24,7 @@ export default function CalculatePage() {
   const [error, setError] = useState<string | null>(null)
   const [selectedBroker, setSelectedBroker] = useState<BrokerType>("Any")
 
-  const handleCalculate = async (data: Trade[]) => {
+  const handleCalculate = async (data: any) => {
     setIsLoading(true)
     setError(null)
 
@@ -103,7 +103,7 @@ export default function CalculatePage() {
               
 
               <TabsContent value="upload">
-                <FileUploadForm onCalculate={handleCalculate} isLoading={isLoading} />
+                <FileUploadForm onCalculate={handleCalculate} isLoading={isLoading} brokerName={selectedBroker} />
               </TabsContent>
 
               <TabsContent value="paste">

@@ -10,11 +10,12 @@ import type { Trade } from "@/lib/types"
 import { normalizeTradeData } from "@/lib/utils"
 
 interface FileUploadFormProps {
-  onCalculate: (data: Trade[]) => void
-  isLoading: boolean
+  onCalculate: (data: {}) => void
+  isLoading: boolean,
+  brokerName: string
 }
 
-export default function FileUploadForm({ onCalculate, isLoading }: FileUploadFormProps) {
+export default function FileUploadForm({ onCalculate, isLoading, brokerName }: FileUploadFormProps) {
   const [files, setFiles] = useState<File[]>([]);
   const [dragActive, setDragActive] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -50,61 +51,64 @@ export default function FileUploadForm({ onCalculate, isLoading }: FileUploadFor
     setFiles(selectedFiles);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!files || files.length === 0) return
 
-    Promise.all(
-      files.map(file => {
-        return new Promise<Trade[]>((resolve, reject) => {
-          if (file.type === "text/csv" || file.name.endsWith(".csv")) {
-            Papa.parse(file, {
-              header: true,
-              complete: (results) => {
-                try {
-                  const normalizedData = normalizeTradeData(results.data as any);
-                  resolve(normalizedData);
-                } catch (error) {
-                  console.error("Error normalizing data:", error);
-                  reject(error);
-                }
-              },
-              error: (error) => {
-                console.error("Error parsing CSV:", error);
-                reject(error);
-              },
-            });
-          } else {
-            reject(new Error("Invalid file type. Only CSV files are supported."));
-          }
-        });
-      })
-    )
-    .then(allNormalizedData => {
-      // Combine data from all files
-      const combinedData: Trade[] = allNormalizedData.flat();
-      onCalculate(combinedData);
-    })
-    .catch(error => {
-      console.error("Error processing files:", error);
-      // Handle the error, perhaps by setting an error state
-      // and displaying a message to the user.
-    });
+    
+    let trades = {}
+    for (const file of files) {
+      let fileContent = await file.text()
+      trades = normalizeTradeData(fileContent, brokerName, { trades });
+    }
+    
+    onCalculate(trades)
+    
+    // Promise.all(
+    //   files.map(file => {
+    //     return new Promise<Trade[]>((resolve, reject) => {
+    //       if (file.type === "text/csv" || file.name.endsWith(".csv")) {
+    //         // Papa.parse(file, {
+    //         //   header: true,
+    //         //   complete: (results) => {
+    //         //     try {
+    //         //       const normalizedData = normalizeTradeData(results.data as any);
+    //         //       resolve(normalizedData);
+    //         //     } catch (error) {
+    //         //       console.error("Error normalizing data:", error);
+    //         //       reject(error);
+    //         //     }
+    //         //   },
+    //         //   error: (error) => {
+    //         //     console.error("Error parsing CSV:", error);
+    //         //     reject(error);
+    //         //   },
+    //         // });
+    //         // we are not using Papaparse to read the csv file
+    //         trades = normalizeTradeData(await file.text(), brokerName, { trades })
+    //       } else {
+    //         reject(new Error("Invalid file type. Only CSV files are supported."));
+    //       }
+    //     });
+    //   })
+    // )
+    // .then(allNormalizedData => {
+    //   // Combine data from all files
+    //   const combinedData: Trade[] = allNormalizedData.flat();
+    //   onCalculate(combinedData);
+    // })
+    // .catch(error => {
+    //   console.error("Error processing files:", error);
+    //   // Handle the error, perhaps by setting an error state
+    //   // and displaying a message to the user.
+    // });
   }
 
-  const processFile = (file: File) => {
-    return new Promise<Trade[]>((resolve, reject) => {
-      header: true,
-      complete: (results) => {
-        const normalizedData = normalizeTradeData(results.data)
-        onCalculate(normalizedData)
-      },
-      error: (error) => {
-        console.error("Error parsing CSV:", error)
-      },
-    })
-  }
+  let totalFilesSize = 0
+  if (files.length > 0)
+  for (const file of files) {
+    totalFilesSize += file.size
   }
 
   return (
@@ -131,10 +135,10 @@ export default function FileUploadForm({ onCalculate, isLoading }: FileUploadFor
         </h3>
 
         <p className="text-sm text-muted-foreground mb-4">
-          {file 
+          {files 
             ? isLoading 
               ? "Analyzing your trades, please wait..." 
-              : `${(file.size / 1024).toFixed(2)} KB - CSV File`
+              : `${(totalFilesSize / 1024).toFixed(2)} KB - CSV File(s)`
             : "Drag and drop your file here, or click to browse"
           }
         </p>
@@ -149,7 +153,7 @@ export default function FileUploadForm({ onCalculate, isLoading }: FileUploadFor
           Select Files
         </Button>
 
-        {file && !isLoading && (
+        {files && !isLoading && (
           <div className="mt-4">
             <Button type="submit">
               Calculate Profit/Loss

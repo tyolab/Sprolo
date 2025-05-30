@@ -5,9 +5,9 @@ export async function POST(request: Request) {
   try {
     const { trades, broker = "Any" } = await request.json()
 
-    if (!trades || !Array.isArray(trades) || trades.length === 0) {
-      return NextResponse.json({ error: "Invalid or empty trades data" }, { status: 400 })
-    }
+    // if (!trades || !Array.isArray(trades) || trades.length === 0) {
+    //   return NextResponse.json({ error: "Invalid or empty trades data" }, { status: 400 })
+    // }
 
     // Process the trades to calculate profit/loss
     const result = calculateProfitLoss(trades, broker)
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
   }
 }
 
-function calculateProfitLoss(trades: Trade[], broker: BrokerType = "Any"): CalculationResult {
+function calculateProfitLoss(trades: any, broker: BrokerType = "Any"): CalculationResult {
   console.log(`Calculating profit/loss using broker: ${broker}`)
   // Sort trades by date
   const sortedTrades = [...trades].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())

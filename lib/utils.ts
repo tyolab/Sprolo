@@ -2,7 +2,7 @@ import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import type { Trade } from "./types"
 
-import { normailzeData } from "../shares-profit-loss-tax/brokers"
+import * as brokers from "../shares-profit-loss-tax/brokers"
 
 
 export function cn(...inputs: ClassValue[]) {
@@ -38,8 +38,10 @@ export function cn(...inputs: ClassValue[]) {
 //     )
 // }
 
-export function normalizeTradeData(csvContent: string, brokerName: string): Trade[] {
-  let tradeData: any[] = [];
+export function normalizeTradeData(csvContent: string, brokerName: string, options: any): Trade[] {
+  options = options || {};
+
+  let tradeData: any = options.trades;
 
     // const broker = identifyBroker(csvContent);
     // const parsedData = parseCSVContent(csvContent);
@@ -55,7 +57,7 @@ export function normalizeTradeData(csvContent: string, brokerName: string): Trad
     //         tradeData = normalizeGenericData(parsedData);
     //         break;
     // }
-    tradeData = normailzeData(csvContent, brokerName);
+    tradeData = brokers.normalizeData(csvContent, brokerName, { trades: tradeData});
 
     if (tradeData.length === 0) {
         throw new Error("No trade data could be extracted from the file.");
