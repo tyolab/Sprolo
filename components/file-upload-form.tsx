@@ -11,7 +11,7 @@ import { normalizeTradeData } from "@/lib/utils"
 
 interface FileUploadFormProps {
   onCalculate: (data: {}) => void
-  isLoading: boolean,
+  isLoading: boolean
   brokerName: string
 }
 
@@ -19,6 +19,7 @@ export default function FileUploadForm({ onCalculate, isLoading, brokerName }: F
   const [files, setFiles] = useState<File[]>([]);
   const [dragActive, setDragActive] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault()
@@ -37,30 +38,42 @@ export default function FileUploadForm({ onCalculate, isLoading, brokerName }: F
     setDragActive(false)
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFiles(Array.from(e.dataTransfer.files));
+      handleFiles(Array.from(e.dataTransfer.files))
     }
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      handleFiles(Array.from(e.target.files));
+      handleFiles(Array.from(e.target.files))
     }
   }
 
   const handleFiles = (selectedFiles: File[]) => {
-    setFiles(selectedFiles);
-  };
+    setFiles(selectedFiles)
+    setErrorMessage(null) // Clear errors when new files are selected
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setErrorMessage(null) // Clear previous errors
 
     if (!files || files.length === 0) return
 
     
     let trades = {}
+    try {
     for (const file of files) {
+       if (!file.name.toLowerCase().endsWith(".csv")) {
+        setErrorMessage(`Invalid file type: ${file.name}. Only CSV files are supported.`)
+        return
+      }
+
       let fileContent = await file.text()
       trades = normalizeTradeData(fileContent, brokerName, { trades });
+    }
+    } catch (error) {
+      console.error("Error processing files:", error);
+      setErrorMessage(error.message || "An error occurred while processing the files.")
     }
     
     onCalculate(trades)
@@ -131,31 +144,35 @@ export default function FileUploadForm({ onCalculate, isLoading, brokerName }: F
         )}
 
         <h3 className="text-lg font-medium mb-2">
-          {isLoading ? "Processing..." : files.length > 0 ? `${files.length} files selected` : "Upload your CSV file(s)"}
+          {isLoading ? "Processing..." : files.length > 0 ? `${files.length} file${files.length > 1 ? 's' : ''} selected` : "Upload your CSV file(s)"}
         </h3>
 
         <p className="text-sm text-muted-foreground mb-4">
-          {files 
+          {files.length > 0
             ? isLoading 
               ? "Analyzing your trades, please wait..." 
-              : `${(totalFilesSize / 1024).toFixed(2)} KB - CSV File(s)`
-            : "Drag and drop your file here, or click to browse"
+              : `${(totalFilesSize / 1024).toFixed(2)} KB - CSV File(s) selected`
+            : "Drag and drop your CSV file(s) here, or click to browse"
           }
         </p>
+
+        {errorMessage && (
+          <p className="text-sm text-red-500 mb-3">{errorMessage}</p>
+        )}
 
         <Button 
           type="button" 
           variant="outline" 
           onClick={() => fileInputRef.current?.click()} 
-          className="mb-4 "
+          className="mb-4"
           disabled={isLoading}
         >
           Select Files
         </Button>
 
-        {files && !isLoading && (
+        {files.length > 0 && !isLoading && (
           <div className="mt-4">
-            <Button type="submit">
+            <Button type="submit" disabled={isLoading || files.length === 0}>
               Calculate Profit/Loss
             </Button>
           </div>
