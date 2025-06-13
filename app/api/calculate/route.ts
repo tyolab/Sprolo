@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server"
 import type { Trade, CalculationResult, SymbolSummary, BrokerType } from "@/lib/types"
+import { processTradesWithRecords, brokers } from '../../../shares-profit-loss-tax/lib'
 
 export async function POST(request: Request) {
   try {
-    const { trades, broker = "Any" } = await request.json()
+    const { trades, broker = "Any", options } = await request.json()
 
     // if (!trades || !Array.isArray(trades) || trades.length === 0) {
     //   return NextResponse.json({ error: "Invalid or empty trades data" }, { status: 400 })
     // }
 
     // Process the trades to calculate profit/loss
-    const result = calculateProfitLoss(trades, broker)
+    // const result = calculateProfitLoss(trades, broker)
+    const result = processTradesWithRecords(trades, broker, options)
 
     return NextResponse.json(result)
   } catch (error) {
