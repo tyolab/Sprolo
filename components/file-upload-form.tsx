@@ -76,7 +76,9 @@ export default function FileUploadForm({ onCalculate, isLoading, brokerName }: F
       setErrorMessage(error.message || "An error occurred while processing the files.")
     }
     
-    onCalculate(trades)
+    // the data file(s) seem fine
+    if (!errorMessage)
+      onCalculate(trades)
     
     // Promise.all(
     //   files.map(file => {

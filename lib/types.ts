@@ -15,6 +15,13 @@ export interface SymbolSummary {
   profitLoss: number
 }
 
+export interface Trades {
+  symbols: Map<string, any>
+  years: Set<number>
+  first: any
+  last: any
+}
+
 export interface CalculationResult {
   trades: Trade[]
   totalProfit: number
@@ -22,3 +29,4 @@ export interface CalculationResult {
   netPnL: number
   symbolSummary: SymbolSummary[]
 }
+
