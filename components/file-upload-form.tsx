@@ -6,7 +6,7 @@ import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Loader2, Upload } from "lucide-react"
 import Papa from "papaparse"
-import type { Trade } from "@/lib/types"
+import type { Trade, Trades } from "@/lib/types"
 import { normalizeTradeData } from "@/lib/utils"
 
 interface FileUploadFormProps {
@@ -60,7 +60,7 @@ export default function FileUploadForm({ onCalculate, isLoading, brokerName }: F
     if (!files || files.length === 0) return
 
     
-    let trades = {}
+    let trades: Trades | null = null;
     try {
     for (const file of files) {
        if (!file.name.toLowerCase().endsWith(".csv")) {
@@ -69,7 +69,7 @@ export default function FileUploadForm({ onCalculate, isLoading, brokerName }: F
       }
 
       let fileContent = await file.text()
-      trades = normalizeTradeData(fileContent, brokerName, { trades });
+      trades = normalizeTradeData(fileContent, brokerName, { trades: trades });
     }
     } catch (error) {
       console.error("Error processing files:", error);
@@ -77,8 +77,22 @@ export default function FileUploadForm({ onCalculate, isLoading, brokerName }: F
     }
     
     // the data file(s) seem fine
-    if (!errorMessage)
-      onCalculate(trades)
+    if (!errorMessage && trades) {
+      // we cannot upload the map and set object
+      let symbols = [];
+      if (trades.symbols && trades.symbols.size > 0)
+        symbols = Array.from(trades.symbols.values());
+
+      onCalculate({
+        count: trades.count,
+        trades: {
+          ...trades,
+          years: Array.from(trades.years),
+          symbols: symbols
+        },
+        broker: 
+      })
+    }
     
     // Promise.all(
     //   files.map(file => {

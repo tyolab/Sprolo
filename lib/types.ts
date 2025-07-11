@@ -16,10 +16,12 @@ export interface SymbolSummary {
 }
 
 export interface Trades {
+  count: any
   symbols: Map<string, any>
   years: Set<number>
   first: any
   last: any
+  broker: string
 }
 
 export interface CalculationResult {

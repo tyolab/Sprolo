@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
-import type { Trade } from "./types"
+import type { Trade, Trades } from "./types"
 
 import * as brokers from "../shares-profit-loss-tax/brokers"
 
@@ -38,10 +38,10 @@ export function cn(...inputs: ClassValue[]) {
 //     )
 // }
 
-export function normalizeTradeData(csvContent: string, brokerName: string, options: any): Trade[] {
+export function normalizeTradeData(csvContent: string, brokerName: string, options: any): Trades {
   options = options || {};
 
-  let tradeData: any = options.trades;
+  let tradeData: Trades = options.trades;
 
     // const broker = identifyBroker(csvContent);
     // const parsedData = parseCSVContent(csvContent);
