@@ -1,12 +1,46 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
-import type { Trade } from "./types"
+import type { Trade, Trades } from "./types"
 
 import * as brokers from "../shares-profit-loss-tax/brokers"
 
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
+}
+
+export function normalizeBrokerName(brokerName?: string | null): string | null {
+  if (!brokerName) return null
+
+  switch (brokerName.trim().toLowerCase()) {
+    case "any":
+    case "any broker":
+    case "auto-detect":
+    case "autodetect":
+      return null
+    case "commsec":
+      return "commsec"
+    case "fpmarkets":
+    case "fp markets":
+      return "fpmarkets"
+    default:
+      return brokerName.trim().toLowerCase()
+  }
+}
+
+export function resolveBrokerName(csvContent: string, brokerName?: string | null): string {
+  const normalizedBroker = normalizeBrokerName(brokerName)
+
+  if (normalizedBroker) {
+    return normalizedBroker
+  }
+
+  const detectedBroker = brokers.identifyBroker(csvContent)
+  if (!detectedBroker) {
+    throw new Error("Could not identify broker from CSV content. Please specify broker name.")
+  }
+
+  return detectedBroker
 }
 
 // export function normalizeTradeData(data: any[]): Trade[] {
@@ -38,10 +72,11 @@ export function cn(...inputs: ClassValue[]) {
 //     )
 // }
 
-export function normalizeTradeData(csvContent: string, brokerName: string, options: any): Trade[] {
+export function normalizeTradeData(csvContent: string, brokerName: string, options: any): Trades {
   options = options || {};
 
-  let tradeData: any = options.trades;
+  let tradeData: Trades = options.trades;
+  const resolvedBrokerName = resolveBrokerName(csvContent, brokerName)
 
     // const broker = identifyBroker(csvContent);
     // const parsedData = parseCSVContent(csvContent);
@@ -57,9 +92,18 @@ export function normalizeTradeData(csvContent: string, brokerName: string, optio
     //         tradeData = normalizeGenericData(parsedData);
     //         break;
     // }
-    tradeData = brokers.normalizeData(csvContent, brokerName, { trades: tradeData});
+    const normalized = brokers.normalizeData(csvContent, resolvedBrokerName, { trades: tradeData});
+    const normalizedTrades = normalized?.trades ?? normalized
+    const normalizedCount = typeof normalized?.count === "number" ? normalized.count : 0
 
-    if (tradeData.length === 0) {
+    tradeData = normalizedTrades
+    tradeData.symbols = tradeData.symbols || new Map()
+    tradeData.years = tradeData.years || new Set()
+    tradeData.count = (tradeData.count || 0) + normalizedCount
+
+    tradeData.broker = resolvedBrokerName
+
+    if (tradeData.symbols.size === 0) {
         throw new Error("No trade data could be extracted from the file.");
     }
 

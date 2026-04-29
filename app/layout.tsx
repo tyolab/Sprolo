@@ -37,27 +37,27 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={ibmPlexMono.className}>
         {/* Top navigation */}
         <nav className="t-nav">
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "8px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "10px" }}>
               <Image src="/logo.png" alt="Sprolo bird logo" width={26} height={20} style={{ objectFit: "contain" }} />
               <span className="t-nav-logo">SPROLO</span>
             </Link>
             <span className="t-nav-tag">v2.0</span>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "28px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "36px" }}>
             <Link href="/" className="t-nav-link">Home</Link>
             <Link href="/calculate" className="t-nav-link">Calculator</Link>
             <Link href="/help" className="t-nav-link">Docs</Link>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10px", letterSpacing: "0.1em", color: "var(--t-muted)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", letterSpacing: "0.1em", color: "var(--t-muted)" }}>
             <span className="t-status-dot" />
             LIVE
           </div>
         </nav>
 
-        <main style={{ minHeight: "100vh", paddingTop: "44px" }}>
+        <main style={{ minHeight: "100vh", paddingTop: "64px" }}>
           {children}
         </main>
       </body>

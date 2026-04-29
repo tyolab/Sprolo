@@ -5,42 +5,42 @@
 @layer base {
   :root,
   .dark {
-    /* Terminal Dark — Bloomberg-inspired palette */
-    --background: 214 35% 4%;
-    --foreground: 210 20% 86%;
-    --card: 214 30% 6%;
-    --card-foreground: 210 20% 86%;
-    --popover: 214 30% 7%;
-    --popover-foreground: 210 20% 86%;
-    --primary: 38 92% 52%;
-    --primary-foreground: 0 0% 4%;
-    --secondary: 214 25% 10%;
-    --secondary-foreground: 210 15% 65%;
-    --muted: 214 25% 9%;
-    --muted-foreground: 210 15% 40%;
-    --accent: 158 75% 36%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 352 85% 55%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 214 25% 13%;
-    --input: 214 30% 8%;
-    --ring: 38 92% 52%;
+    /* TYO Lab reference palette */
+    --background: 227 35% 12%;
+    --foreground: 217 24% 86%;
+    --card: 228 31% 12%;
+    --card-foreground: 217 24% 86%;
+    --popover: 228 31% 12%;
+    --popover-foreground: 217 24% 86%;
+    --primary: 203 100% 39%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 179 100% 44%;
+    --secondary-foreground: 227 35% 12%;
+    --muted: 226 19% 20%;
+    --muted-foreground: 220 5% 56%;
+    --accent: 179 100% 44%;
+    --accent-foreground: 227 35% 12%;
+    --destructive: 329 74% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 231 18% 22%;
+    --input: 228 31% 12%;
+    --ring: 203 100% 39%;
     --radius: 0.125rem;
-    --chart-1: 38 92% 52%;
-    --chart-2: 158 75% 36%;
-    --chart-3: 352 85% 55%;
-    --chart-4: 199 85% 48%;
-    --chart-5: 270 70% 58%;
+    --chart-1: 203 100% 39%;
+    --chart-2: 179 100% 44%;
+    --chart-3: 329 74% 55%;
+    --chart-4: 217 24% 86%;
+    --chart-5: 220 5% 56%;
 
-    /* Semantic terminal tokens */
-    --t-amber: #F5A31C;
-    --t-green: #00C47E;
-    --t-red: #FF3550;
-    --t-bg: #070B11;
-    --t-surface: #0D1117;
-    --t-border: #1C2432;
-    --t-text: #C4D4E0;
-    --t-muted: #445566;
+    /* Semantic UI tokens */
+    --t-amber: #007ac7;
+    --t-green: #00e0d8;
+    --t-red: #e03498;
+    --t-bg: #000000;
+    --t-surface: #15192b;
+    --t-border: #2d3041;
+    --t-text: #d4dae3;
+    --t-muted: #8b8e93;
   }
 }
 
@@ -57,14 +57,14 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-mono), 'IBM Plex Mono', 'Courier New', monospace;
-    font-size: 13px;
+    font-size: 15px;
     line-height: 1.6;
     letter-spacing: 0.01em;
     background-color: var(--t-bg);
     position: relative;
   }
 
-  /* Scanline texture overlay */
+  /* Subtle texture overlay */
   body::before {
     content: '';
     position: fixed;
@@ -76,8 +76,8 @@
       0deg,
       transparent,
       transparent 3px,
-      rgba(0, 0, 0, 0.04) 3px,
-      rgba(0, 0, 0, 0.04) 4px
+      rgba(0, 122, 199, 0.025) 3px,
+      rgba(0, 122, 199, 0.025) 4px
     );
     pointer-events: none;
     z-index: 9998;
@@ -88,7 +88,7 @@
     letter-spacing: -0.01em;
   }
 
-  /* Terminal scrollbar */
+  /* UI scrollbar */
   ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: var(--t-bg); }
   ::-webkit-scrollbar-thumb { background: var(--t-border); border-radius: 0; }
@@ -102,22 +102,22 @@
   left: 0;
   right: 0;
   z-index: 100;
-  height: 44px;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 1.5rem;
-  background: rgba(7, 11, 17, 0.95);
+  padding: 0 2.5rem;
+  background: rgba(0, 0, 0, 0.95);
   border-bottom: 1px solid var(--t-border);
   backdrop-filter: blur(8px);
   font-family: var(--font-mono), monospace;
-  font-size: 11px;
+  font-size: 15px;
   letter-spacing: 0.08em;
 }
 
 .t-nav-logo {
   font-family: var(--font-display), sans-serif;
-  font-size: 16px;
+  font-size: 22px;
   font-weight: 800;
   color: var(--t-amber);
   letter-spacing: 0.1em;
@@ -125,7 +125,7 @@
 }
 
 .t-nav-tag {
-  font-size: 9px;
+  font-size: 12px;
   color: var(--t-muted);
   background: var(--t-surface);
   border: 1px solid var(--t-border);
@@ -134,15 +134,15 @@
 }
 
 .t-nav-link {
-  color: var(--t-muted);
+  color: #ffffff;
   text-decoration: none;
   letter-spacing: 0.08em;
   transition: color 0.15s;
-  font-size: 11px;
+  font-size: 16px;
 }
 
 .t-nav-link:hover {
-  color: var(--t-text);
+  color: #ffffff;
 }
 
 .t-nav-link.active {
@@ -172,7 +172,7 @@
   height: 30px;
   display: flex;
   align-items: center;
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: 0.05em;
   white-space: nowrap;
 }
@@ -194,7 +194,7 @@
   padding: 0 20px;
   border-right: 1px solid var(--t-border);
   color: var(--t-muted);
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .ticker-item .sym {
@@ -240,7 +240,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--t-muted);
@@ -282,7 +282,7 @@
 }
 
 .t-metric-label {
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--t-muted);
@@ -302,7 +302,7 @@
 .t-metric-value.neutral { color: var(--t-text); }
 
 .t-metric-sub {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--t-muted);
   margin-top: 6px;
 }
@@ -311,11 +311,11 @@
 .t-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .t-table th {
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--t-muted);
@@ -328,13 +328,13 @@
 
 .t-table td {
   padding: 9px 12px;
-  border-bottom: 1px solid rgba(28, 36, 50, 0.6);
+  border-bottom: 1px solid rgba(45, 48, 65, 0.6);
   color: var(--t-text);
   font-variant-numeric: tabular-nums;
 }
 
 .t-table tr:hover td {
-  background: rgba(245, 163, 28, 0.04);
+  background: rgba(0, 122, 199, 0.08);
 }
 
 .t-table tr:last-child td {
@@ -343,8 +343,8 @@
 
 .t-table .gain { color: var(--t-green); }
 .t-table .loss { color: var(--t-red); }
-.t-table .buy  { color: #5B9BF5; }
-.t-table .sell { color: #E87E3E; }
+.t-table .buy  { color: var(--t-green); }
+.t-table .sell { color: var(--t-red); }
 .t-table .sym  { color: var(--t-amber); font-weight: 600; letter-spacing: 0.05em; }
 
 /* ─── Buttons ─────────────────────────────────────────────────── */
@@ -355,7 +355,7 @@
   gap: 8px;
   padding: 10px 20px;
   font-family: var(--font-mono), monospace;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -365,39 +365,41 @@
   border-radius: 0;
   text-decoration: none;
   white-space: nowrap;
+  color: #ffffff;
 }
 
 .t-btn-primary {
   background: var(--t-amber);
-  color: #070B11;
+  color: #ffffff;
   border-color: var(--t-amber);
 }
 
 .t-btn-primary:hover {
-  background: #FFB830;
-  border-color: #FFB830;
+  background: #00a4db;
+  border-color: #00a4db;
 }
 
 .t-btn-ghost {
   background: transparent;
-  color: var(--t-muted);
+  color: #ffffff;
   border-color: var(--t-border);
 }
 
 .t-btn-ghost:hover {
-  color: var(--t-text);
+  color: #ffffff;
   border-color: var(--t-muted);
   background: rgba(255,255,255,0.02);
 }
 
 .t-btn-outline {
   background: transparent;
-  color: var(--t-amber);
+  color: #ffffff;
   border-color: var(--t-amber);
 }
 
 .t-btn-outline:hover {
-  background: rgba(245, 163, 28, 0.1);
+  color: #ffffff;
+  background: rgba(0, 122, 199, 0.12);
 }
 
 .t-btn:disabled {
@@ -407,7 +409,7 @@
 
 .t-btn-sm {
   padding: 6px 12px;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 /* ─── Form elements ───────────────────────────────────────────── */
@@ -417,7 +419,7 @@
   border: 1px solid var(--t-border);
   color: var(--t-text);
   font-family: var(--font-mono), monospace;
-  font-size: 12px;
+  font-size: 14px;
   padding: 12px;
   resize: vertical;
   border-radius: 0;
@@ -428,7 +430,7 @@
 .t-textarea:focus {
   outline: none;
   border-color: var(--t-amber);
-  box-shadow: 0 0 0 1px rgba(245, 163, 28, 0.2);
+  box-shadow: 0 0 0 1px rgba(0, 122, 199, 0.25);
 }
 
 .t-textarea::placeholder {
@@ -440,7 +442,7 @@
   border: 1px solid var(--t-border);
   color: var(--t-text);
   font-family: var(--font-mono), monospace;
-  font-size: 11px;
+  font-size: 13px;
   padding: 8px 12px;
   border-radius: 0;
   cursor: pointer;
@@ -462,7 +464,7 @@
 
 .t-tab {
   padding: 10px 16px;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--t-muted);
@@ -492,20 +494,20 @@
   text-align: center;
   transition: all 0.2s;
   cursor: pointer;
-  background: rgba(245, 163, 28, 0.01);
+  background: rgba(0, 122, 199, 0.03);
 }
 
 .t-dropzone:hover,
 .t-dropzone.active {
   border-color: var(--t-amber);
-  background: rgba(245, 163, 28, 0.04);
+  background: rgba(0, 122, 199, 0.08);
 }
 
 /* ─── Badges / Tags ────────────────────────────────────────────── */
 .t-badge {
   display: inline-flex;
   align-items: center;
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   padding: 2px 7px;
@@ -513,28 +515,28 @@
 }
 
 .t-badge-amber {
-  color: var(--t-amber);
-  border-color: rgba(245, 163, 28, 0.4);
-  background: rgba(245, 163, 28, 0.08);
+  color: #ffffff;
+  border-color: rgba(0, 122, 199, 0.45);
+  background: rgba(0, 122, 199, 0.12);
 }
 
 .t-badge-green {
   color: var(--t-green);
-  border-color: rgba(0, 196, 126, 0.4);
-  background: rgba(0, 196, 126, 0.08);
+  border-color: rgba(0, 224, 216, 0.45);
+  background: rgba(0, 224, 216, 0.12);
 }
 
 .t-badge-red {
   color: var(--t-red);
-  border-color: rgba(255, 53, 80, 0.4);
-  background: rgba(255, 53, 80, 0.08);
+  border-color: rgba(224, 52, 152, 0.45);
+  background: rgba(224, 52, 152, 0.12);
 }
 
 /* ─── Grid lines background ────────────────────────────────────── */
 .t-grid-bg {
   background-image:
-    linear-gradient(rgba(28, 36, 50, 0.4) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(28, 36, 50, 0.4) 1px, transparent 1px);
+    linear-gradient(rgba(45, 48, 65, 0.45) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(45, 48, 65, 0.45) 1px, transparent 1px);
   background-size: 40px 40px;
 }
 
@@ -560,7 +562,7 @@
 
 /* ─── Drag handle / section labels ────────────────────────────── */
 .t-section-label {
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--t-muted);
@@ -580,9 +582,10 @@
 [data-slot="button"] {
   border-radius: 0 !important;
   font-family: var(--font-mono), monospace;
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  color: #ffffff !important;
 }
 
 /* shadcn Card */
@@ -606,7 +609,7 @@
 [data-slot="tabs-trigger"] {
   border-radius: 0 !important;
   font-family: var(--font-mono), monospace;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   padding: 10px 16px;
@@ -635,7 +638,7 @@
   background: var(--t-bg) !important;
   border-color: var(--t-border) !important;
   font-family: var(--font-mono), monospace;
-  font-size: 12px;
+  font-size: 14px;
   color: var(--t-text);
 }
 
@@ -652,7 +655,7 @@
   background: var(--t-surface) !important;
   border-color: var(--t-border) !important;
   font-family: var(--font-mono), monospace;
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: 0.05em;
   color: var(--t-text);
 }
@@ -662,19 +665,19 @@
   background: var(--t-surface);
   border-color: var(--t-border);
   font-family: var(--font-mono), monospace;
-  font-size: 11px;
+  font-size: 13px;
 }
 
 [data-slot="select-item"] {
   border-radius: 0 !important;
   font-family: var(--font-mono), monospace;
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: 0.05em;
 }
 
 /* shadcn Table */
 thead th {
-  font-size: 9px !important;
+  font-size: 11px !important;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--t-muted) !important;

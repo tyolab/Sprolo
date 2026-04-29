@@ -34,7 +34,7 @@ export default function Home() {
 
   return (
     <div>
-      {/* Ticker tape */}
+      {/* Ticker tape
       <div className="ticker-tape">
         <div className="ticker-inner">
           {allItems.map((item, i) => (
@@ -42,6 +42,7 @@ export default function Home() {
           ))}
         </div>
       </div>
+      */}
 
       {/* Hero */}
       <div
@@ -115,7 +116,7 @@ export default function Home() {
           {/* CTAs */}
           <div className="anim-fade-up anim-delay-4" style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
             <Link href="/calculate" className="t-btn t-btn-primary">
-              Open Terminal
+              Check Your P/L Now
               <ArrowRight size={14} />
             </Link>
             <Link href="/help" className="t-btn t-btn-ghost">

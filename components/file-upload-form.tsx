@@ -3,6 +3,7 @@
 import type React from "react"
 import { useState, useRef } from "react"
 import { Loader2, Upload, File, X } from "lucide-react"
+import type { Trades } from "@/lib/types"
 import { normalizeTradeData } from "@/lib/utils"
 
 interface FileUploadFormProps {
@@ -14,6 +15,7 @@ interface FileUploadFormProps {
 export default function FileUploadForm({ onCalculate, isLoading, brokerName }: FileUploadFormProps) {
   const [files, setFiles] = useState<File[]>([])
   const [dragActive, setDragActive] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleDrag = (e: React.DragEvent) => {
@@ -27,27 +29,64 @@ export default function FileUploadForm({ onCalculate, isLoading, brokerName }: F
     e.preventDefault()
     e.stopPropagation()
     setDragActive(false)
-    if (e.dataTransfer.files?.length) setFiles(Array.from(e.dataTransfer.files))
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFiles(Array.from(e.dataTransfer.files))
+    }
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) setFiles(Array.from(e.target.files))
+    if (e.target.files) {
+      handleFiles(Array.from(e.target.files))
+    }
+  }
+
+  const handleFiles = (selectedFiles: File[]) => {
+    setFiles(selectedFiles)
+    setErrorMessage(null)
   }
 
   const removeFile = (index: number) => {
     setFiles((prev) => prev.filter((_, i) => i !== index))
+    setErrorMessage(null)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!files.length) return
+    setErrorMessage(null)
 
-    let trades = {}
-    for (const file of files) {
-      const fileContent = await file.text()
-      trades = normalizeTradeData(fileContent, brokerName, { trades })
+    if (!files || files.length === 0) return
+
+    let trades: Trades | null = null
+    try {
+      for (const file of files) {
+        if (!file.name.toLowerCase().endsWith(".csv")) {
+          setErrorMessage(`Invalid file type: ${file.name}. Only CSV files are supported.`)
+          return
+        }
+        const fileContent = await file.text()
+        trades = normalizeTradeData(fileContent, brokerName, { trades })
+      }
+    } catch (error: any) {
+      console.error("Error processing files:", error)
+      setErrorMessage(error.message || "An error occurred while processing the files.")
+      return
     }
-    onCalculate(trades)
+
+    if (trades) {
+      const symbols = trades.symbols && trades.symbols.size > 0
+        ? Array.from(trades.symbols.entries())
+        : []
+
+      onCalculate({
+        count: trades.count,
+        trades: {
+          ...trades,
+          years: Array.from(trades.years || []),
+          symbols,
+        },
+        broker: trades.broker || brokerName,
+      })
+    }
   }
 
   const totalSize = files.reduce((acc, f) => acc + f.size, 0)
@@ -136,6 +175,24 @@ export default function FileUploadForm({ onCalculate, isLoading, brokerName }: F
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Error message */}
+      {errorMessage && (
+        <div
+          style={{
+            marginTop: "10px",
+            padding: "10px 12px",
+            border: "1px solid rgba(255,53,80,0.4)",
+            background: "rgba(255,53,80,0.06)",
+            fontSize: "11px",
+            color: "var(--t-red)",
+            letterSpacing: "0.02em",
+          }}
+        >
+          <span style={{ fontWeight: 600, marginRight: "6px" }}>ERROR:</span>
+          {errorMessage}
         </div>
       )}
 

@@ -11,6 +11,36 @@ interface ResultsDisplayProps {
 export default function ResultsDisplay({ results }: ResultsDisplayProps) {
   const [activeTab, setActiveTab] = useState<"summary" | "trades">("summary")
 
+  const financialYears = results.financial_years || {}
+  const financialYearEntries = Object.entries(financialYears)
+  const primaryYear = financialYearEntries.length > 0 ? financialYearEntries[financialYearEntries.length - 1][1] : null
+
+  const normalizedTrades = Array.isArray(results.trades)
+    ? results.trades
+    : []
+
+  const normalizedSymbolSummary = Array.isArray(results.symbolSummary)
+    ? results.symbolSummary
+    : Array.isArray(results.holdings)
+      ? results.holdings.map((holding: any) => ({
+          symbol: holding.symbol,
+          tradeCount: 0,
+          profitLoss: Number(holding.profit || 0),
+        }))
+      : []
+
+  const totalProfit = typeof results.totalProfit === "number"
+    ? results.totalProfit
+    : Number(primaryYear?.total_profit_gain || 0)
+
+  const totalLoss = typeof results.totalLoss === "number"
+    ? results.totalLoss
+    : Number(primaryYear?.total_profit_loss || 0)
+
+  const netPnL = typeof results.netPnL === "number"
+    ? results.netPnL
+    : Number(primaryYear?.profit || 0) + Number(primaryYear?.profit_discount || 0)
+
   const downloadResults = (format: "csv" | "json") => {
     let content: string
     let filename: string
@@ -18,7 +48,7 @@ export default function ResultsDisplay({ results }: ResultsDisplayProps) {
 
     if (format === "csv") {
       const headers = "symbol,side,quantity,price,date,profit_loss\n"
-      const rows = results.trades
+      const rows = normalizedTrades
         .map((t) => `${t.symbol},${t.side},${t.quantity},${t.price},${t.date},${t.profitLoss || 0}`)
         .join("\n")
       content = headers + rows
@@ -41,10 +71,13 @@ export default function ResultsDisplay({ results }: ResultsDisplayProps) {
     URL.revokeObjectURL(url)
   }
 
-  const isProfit = results.netPnL >= 0
-  const winCount = results.symbolSummary.filter((s) => s.profitLoss >= 0).length
-  const totalSymbols = results.symbolSummary.length
+  const isProfit = netPnL >= 0
+  const winCount = normalizedSymbolSummary.filter((s) => s.profitLoss >= 0).length
+  const totalSymbols = normalizedSymbolSummary.length
   const winRate = totalSymbols > 0 ? Math.round((winCount / totalSymbols) * 100) : 0
+  const tradesCount = normalizedTrades.length > 0
+    ? normalizedTrades.length
+    : Number(results.trades?.count || primaryYear?.total_trades || 0)
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -71,7 +104,7 @@ export default function ResultsDisplay({ results }: ResultsDisplayProps) {
           >
             Analysis Results
           </span>
-          <span className="t-badge t-badge-amber">{results.trades.length} TRADES</span>
+          <span className="t-badge t-badge-amber">{tradesCount} TRADES</span>
         </div>
         <div style={{ display: "flex", gap: "8px" }}>
           <button
@@ -97,7 +130,7 @@ export default function ResultsDisplay({ results }: ResultsDisplayProps) {
         <div className="t-metric">
           <div className="t-metric-label">Net P&amp;L</div>
           <div className={`t-metric-value ${isProfit ? "gain" : "loss"}`}>
-            {isProfit ? "+" : ""}${results.netPnL.toFixed(2)}
+            {isProfit ? "+" : ""}${netPnL.toFixed(2)}
           </div>
           <div className="t-metric-sub" style={{ display: "flex", alignItems: "center", gap: "4px" }}>
             {isProfit
@@ -110,14 +143,14 @@ export default function ResultsDisplay({ results }: ResultsDisplayProps) {
         {/* Total Profit */}
         <div className="t-metric">
           <div className="t-metric-label">Gross Profit</div>
-          <div className="t-metric-value gain">+${results.totalProfit.toFixed(2)}</div>
+          <div className="t-metric-value gain">+${totalProfit.toFixed(2)}</div>
           <div className="t-metric-sub">Realized gains</div>
         </div>
 
         {/* Total Loss */}
         <div className="t-metric">
           <div className="t-metric-label">Gross Loss</div>
-          <div className="t-metric-value loss">-${Math.abs(results.totalLoss).toFixed(2)}</div>
+          <div className="t-metric-value loss">-${Math.abs(totalLoss).toFixed(2)}</div>
           <div className="t-metric-sub">Realized losses</div>
         </div>
 
@@ -160,7 +193,7 @@ export default function ResultsDisplay({ results }: ResultsDisplayProps) {
                 </tr>
               </thead>
               <tbody>
-                {results.symbolSummary.map((s) => (
+                {normalizedSymbolSummary.map((s) => (
                   <tr key={s.symbol}>
                     <td className="sym">{s.symbol}</td>
                     <td style={{ color: "var(--t-muted)" }}>{s.tradeCount}</td>
@@ -183,6 +216,13 @@ export default function ResultsDisplay({ results }: ResultsDisplayProps) {
                     </td>
                   </tr>
                 ))}
+                {normalizedSymbolSummary.length === 0 && (
+                  <tr>
+                    <td colSpan={4} style={{ color: "var(--t-muted)", padding: "18px 12px" }}>
+                      No symbol summary available for this result set.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           ) : (
@@ -198,7 +238,7 @@ export default function ResultsDisplay({ results }: ResultsDisplayProps) {
                 </tr>
               </thead>
               <tbody>
-                {results.trades.map((trade, i) => (
+                {normalizedTrades.map((trade, i) => (
                   <tr key={i}>
                     <td style={{ color: "var(--t-muted)", fontVariantNumeric: "tabular-nums" }}>{trade.date}</td>
                     <td className="sym">{trade.symbol}</td>
@@ -220,6 +260,13 @@ export default function ResultsDisplay({ results }: ResultsDisplayProps) {
                     </td>
                   </tr>
                 ))}
+                {normalizedTrades.length === 0 && (
+                  <tr>
+                    <td colSpan={6} style={{ color: "var(--t-muted)", padding: "18px 12px" }}>
+                      Trade-by-trade rows are not included in this response yet.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           )}

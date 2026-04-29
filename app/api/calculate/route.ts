@@ -1,16 +1,56 @@
 import { NextResponse } from "next/server"
 import type { Trade, CalculationResult, SymbolSummary, BrokerType } from "@/lib/types"
+import { processTradesWithRecords, brokers } from '../../../shares-profit-loss-tax/lib'
+import { normalizeBrokerName } from "@/lib/utils"
+
+function hydrateTrades(input: any) {
+  const serializedTrades = input?.trades ? input.trades : input
+
+  if (!serializedTrades) {
+    throw new Error("Missing trade records")
+  }
+
+  const hydratedSymbols = new Map(
+    (serializedTrades.symbols || []).map(([symbol, transactions]: [string, any[]]) => [
+      symbol,
+      (transactions || []).map((transaction) => ({
+        ...transaction,
+        date: transaction?.date ? new Date(transaction.date) : transaction?.date,
+      })),
+    ])
+  )
+
+  return {
+    ...serializedTrades,
+    symbols: hydratedSymbols,
+    years: new Set(serializedTrades.years || []),
+    first: serializedTrades.first ? new Date(serializedTrades.first) : null,
+    last: serializedTrades.last ? new Date(serializedTrades.last) : null,
+    count: serializedTrades.count ?? input?.count ?? 0,
+    broker: serializedTrades.broker ?? input?.broker ?? null,
+  }
+}
 
 export async function POST(request: Request) {
   try {
-    const { trades, broker = "Any" } = await request.json()
+    const { trades, broker = "Any", options } = await request.json()
+    const hydratedTrades = hydrateTrades(trades)
+    const requestedBrokerName = normalizeBrokerName(broker)
+    const parsedBrokerName = normalizeBrokerName(hydratedTrades?.broker)
+    const resolvedBrokerName = requestedBrokerName ?? parsedBrokerName
+    const resolvedBroker = brokers.get_broker(resolvedBrokerName, options)
+
+    if (!resolvedBroker) {
+      throw new Error(`Unsupported broker: ${broker}`)
+    }
 
     // if (!trades || !Array.isArray(trades) || trades.length === 0) {
     //   return NextResponse.json({ error: "Invalid or empty trades data" }, { status: 400 })
     // }
 
     // Process the trades to calculate profit/loss
-    const result = calculateProfitLoss(trades, broker)
+    // const result = calculateProfitLoss(trades, broker)
+    const result = processTradesWithRecords(hydratedTrades, resolvedBroker, options)
 
     return NextResponse.json(result)
   } catch (error) {
