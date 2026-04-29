@@ -1,11 +1,8 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Loader2 } from "lucide-react"
+import { Loader2, ClipboardPaste } from "lucide-react"
 import Papa from "papaparse"
 import type { Trade } from "@/lib/types"
 import { normalizeTradeData } from "@/lib/utils"
@@ -15,12 +12,19 @@ interface TextInputFormProps {
   isLoading: boolean
 }
 
+const SAMPLE_CSV = `symbol,side,quantity,price,date
+AAPL,buy,10,150.25,2023-01-15
+AAPL,sell,10,165.50,2023-02-20
+MSFT,buy,5,280.10,2023-01-10
+MSFT,sell,5,300.75,2023-03-05
+TSLA,buy,3,190.25,2023-02-01
+TSLA,sell,3,210.50,2023-04-10`
+
 export default function TextInputForm({ onCalculate, isLoading }: TextInputFormProps) {
   const [csvText, setCsvText] = useState("")
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-
     if (!csvText.trim()) return
 
     Papa.parse(csvText, {
@@ -35,48 +39,82 @@ export default function TextInputForm({ onCalculate, isLoading }: TextInputFormP
     })
   }
 
-  const loadSampleData = () => {
-    const sampleData = `symbol,side,quantity,price,date
-AAPL,buy,10,150.25,2023-01-15
-AAPL,sell,10,165.50,2023-02-20
-MSFT,buy,5,280.10,2023-01-10
-MSFT,sell,5,300.75,2023-03-05
-TSLA,buy,3,190.25,2023-02-01
-TSLA,sell,3,210.50,2023-04-10`
-
-    setCsvText(sampleData)
-  }
-
   return (
     <form onSubmit={handleSubmit}>
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <label htmlFor="csv-input" className="text-sm font-medium">
-            Paste your CSV data below
-          </label>
-          <Button type="button" variant="outline" size="sm" onClick={loadSampleData}>
-            Load Sample Data
-          </Button>
+      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        {/* Label row */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <span style={{ fontSize: "10px", color: "var(--t-muted)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+            // Paste raw CSV
+          </span>
+          <button
+            type="button"
+            onClick={() => setCsvText(SAMPLE_CSV)}
+            className="t-btn t-btn-ghost t-btn-sm"
+            style={{ display: "flex", alignItems: "center", gap: "6px" }}
+          >
+            <ClipboardPaste size={11} />
+            Load Sample
+          </button>
         </div>
 
-        <Textarea
-          id="csv-input"
+        {/* Textarea */}
+        <textarea
           value={csvText}
           onChange={(e) => setCsvText(e.target.value)}
-          placeholder="symbol,side,quantity,price,date"
-          className="font-mono h-64"
+          placeholder={`symbol,side,quantity,price,date\nAAPL,buy,10,150.25,2023-01-15\n...`}
+          className="t-textarea"
+          style={{ minHeight: "220px" }}
+          spellCheck={false}
         />
 
-        <Button type="submit" disabled={isLoading || !csvText.trim()}>
+        {/* Column hint */}
+        <div
+          style={{
+            display: "flex",
+            gap: "8px",
+            flexWrap: "wrap",
+          }}
+        >
+          {["symbol", "side", "quantity", "price", "date"].map((col) => (
+            <span
+              key={col}
+              style={{
+                fontSize: "9px",
+                letterSpacing: "0.08em",
+                color: "var(--t-muted)",
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid var(--t-border)",
+                padding: "2px 8px",
+              }}
+            >
+              {col}
+            </span>
+          ))}
+        </div>
+
+        {/* Submit */}
+        <button
+          type="submit"
+          disabled={isLoading || !csvText.trim()}
+          className="t-btn t-btn-primary"
+          style={{ marginTop: "4px" }}
+        >
           {isLoading ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} />
               Processing...
             </>
           ) : (
-            "Calculate Profit/Loss"
+            "Calculate Profit / Loss"
           )}
-        </Button>
+        </button>
       </div>
     </form>
   )

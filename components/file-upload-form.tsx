@@ -1,166 +1,152 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useRef } from "react"
-import { Button } from "@/components/ui/button"
-import { Loader2, Upload } from "lucide-react"
-import Papa from "papaparse"
-import type { Trade } from "@/lib/types"
+import { Loader2, Upload, File, X } from "lucide-react"
 import { normalizeTradeData } from "@/lib/utils"
 
 interface FileUploadFormProps {
   onCalculate: (data: {}) => void
-  isLoading: boolean,
+  isLoading: boolean
   brokerName: string
 }
 
 export default function FileUploadForm({ onCalculate, isLoading, brokerName }: FileUploadFormProps) {
-  const [files, setFiles] = useState<File[]>([]);
+  const [files, setFiles] = useState<File[]>([])
   const [dragActive, setDragActive] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
-
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true)
-    } else if (e.type === "dragleave") {
-      setDragActive(false)
-    }
+    if (e.type === "dragenter" || e.type === "dragover") setDragActive(true)
+    else if (e.type === "dragleave") setDragActive(false)
   }
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
     setDragActive(false)
-
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFiles(Array.from(e.dataTransfer.files));
-    }
+    if (e.dataTransfer.files?.length) setFiles(Array.from(e.dataTransfer.files))
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      handleFiles(Array.from(e.target.files));
-    }
+    if (e.target.files) setFiles(Array.from(e.target.files))
   }
 
-  const handleFiles = (selectedFiles: File[]) => {
-    setFiles(selectedFiles);
-  };
+  const removeFile = (index: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!files.length) return
 
-    if (!files || files.length === 0) return
-
-    
     let trades = {}
     for (const file of files) {
-      let fileContent = await file.text()
-      trades = normalizeTradeData(fileContent, brokerName, { trades });
+      const fileContent = await file.text()
+      trades = normalizeTradeData(fileContent, brokerName, { trades })
     }
-    
     onCalculate(trades)
-    
-    // Promise.all(
-    //   files.map(file => {
-    //     return new Promise<Trade[]>((resolve, reject) => {
-    //       if (file.type === "text/csv" || file.name.endsWith(".csv")) {
-    //         // Papa.parse(file, {
-    //         //   header: true,
-    //         //   complete: (results) => {
-    //         //     try {
-    //         //       const normalizedData = normalizeTradeData(results.data as any);
-    //         //       resolve(normalizedData);
-    //         //     } catch (error) {
-    //         //       console.error("Error normalizing data:", error);
-    //         //       reject(error);
-    //         //     }
-    //         //   },
-    //         //   error: (error) => {
-    //         //     console.error("Error parsing CSV:", error);
-    //         //     reject(error);
-    //         //   },
-    //         // });
-    //         // we are not using Papaparse to read the csv file
-    //         trades = normalizeTradeData(await file.text(), brokerName, { trades })
-    //       } else {
-    //         reject(new Error("Invalid file type. Only CSV files are supported."));
-    //       }
-    //     });
-    //   })
-    // )
-    // .then(allNormalizedData => {
-    //   // Combine data from all files
-    //   const combinedData: Trade[] = allNormalizedData.flat();
-    //   onCalculate(combinedData);
-    // })
-    // .catch(error => {
-    //   console.error("Error processing files:", error);
-    //   // Handle the error, perhaps by setting an error state
-    //   // and displaying a message to the user.
-    // });
   }
 
-  let totalFilesSize = 0
-  if (files.length > 0)
-  for (const file of files) {
-    totalFilesSize += file.size
-  }
+  const totalSize = files.reduce((acc, f) => acc + f.size, 0)
 
   return (
     <form onSubmit={handleSubmit}>
+      {/* Drop zone */}
       <div
-        className={`border-2 border-dashed rounded-lg p-8 text-center ${
-          dragActive ? "border-primary bg-primary/5" : isLoading ? "border-primary/50 bg-primary/5" : "border-muted-foreground/25"
-        }`}
+        className={`t-dropzone ${dragActive ? "active" : ""}`}
         onDragEnter={handleDrag}
         onDragOver={handleDrag}
         onDragLeave={handleDrag}
         onDrop={handleDrop}
+        onClick={() => !isLoading && fileInputRef.current?.click()}
+        style={{ cursor: isLoading ? "default" : "pointer" }}
       >
-        <input ref={fileInputRef} type="file" accept=".csv" onChange={handleFileChange} className="hidden" />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv"
+          multiple
+          onChange={handleFileChange}
+          style={{ display: "none" }}
+        />
 
         {isLoading ? (
-          <Loader2 className="h-10 w-10 mx-auto mb-4 text-primary animate-spin"/>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
+            <Loader2 size={32} style={{ color: "var(--t-amber)", animation: "spin 1s linear infinite" }} />
+            <span style={{ fontSize: "11px", color: "var(--t-amber)", letterSpacing: "0.1em" }}>
+              PROCESSING...
+            </span>
+          </div>
+        ) : files.length === 0 ? (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
+            <Upload size={28} style={{ color: "var(--t-muted)" }} />
+            <div>
+              <div style={{ fontSize: "13px", color: "var(--t-text)", marginBottom: "6px", fontWeight: 500 }}>
+                Drop CSV files here
+              </div>
+              <div style={{ fontSize: "11px", color: "var(--t-muted)" }}>
+                or click to browse — multiple files supported
+              </div>
+            </div>
+          </div>
         ) : (
-          <Upload className="h-10 w-10 mx-auto mb-4 text-muted-foreground"/>
-        )}
-
-        <h3 className="text-lg font-medium mb-2">
-          {isLoading ? "Processing..." : files.length > 0 ? `${files.length} files selected` : "Upload your CSV file(s)"}
-        </h3>
-
-        <p className="text-sm text-muted-foreground mb-4">
-          {files 
-            ? isLoading 
-              ? "Analyzing your trades, please wait..." 
-              : `${(totalFilesSize / 1024).toFixed(2)} KB - CSV File(s)`
-            : "Drag and drop your file here, or click to browse"
-          }
-        </p>
-
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={() => fileInputRef.current?.click()} 
-          className="mb-4 "
-          disabled={isLoading}
-        >
-          Select Files
-        </Button>
-
-        {files && !isLoading && (
-          <div className="mt-4">
-            <Button type="submit">
-              Calculate Profit/Loss
-            </Button>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
+            <File size={24} style={{ color: "var(--t-amber)" }} />
+            <div style={{ fontSize: "12px", color: "var(--t-text)", fontWeight: 500 }}>
+              {files.length} file{files.length !== 1 ? "s" : ""} selected
+            </div>
+            <div style={{ fontSize: "10px", color: "var(--t-muted)" }}>
+              {(totalSize / 1024).toFixed(1)} KB total — click to change
+            </div>
           </div>
         )}
       </div>
+
+      {/* File list */}
+      {files.length > 0 && !isLoading && (
+        <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "4px" }}>
+          {files.map((file, i) => (
+            <div
+              key={i}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "8px 12px",
+                background: "rgba(245,163,28,0.05)",
+                border: "1px solid rgba(245,163,28,0.2)",
+                fontSize: "11px",
+              }}
+            >
+              <span style={{ color: "var(--t-amber)", fontWeight: 600, letterSpacing: "0.04em" }}>
+                {file.name}
+              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <span style={{ color: "var(--t-muted)" }}>{(file.size / 1024).toFixed(1)} KB</span>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); removeFile(i) }}
+                  style={{ background: "none", border: "none", cursor: "pointer", color: "var(--t-muted)", padding: "0", display: "flex" }}
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Submit */}
+      {files.length > 0 && !isLoading && (
+        <div style={{ marginTop: "16px" }}>
+          <button type="submit" className="t-btn t-btn-primary" style={{ width: "100%" }}>
+            Calculate Profit / Loss
+          </button>
+        </div>
+      )}
     </form>
   )
 }

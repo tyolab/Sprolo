@@ -1,28 +1,65 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { IBM_Plex_Mono, Syne } from "next/font/google"
+import Link from "next/link"
+import Image from "next/image"
 import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
 
-const inter = Inter({ subsets: ["latin"] })
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-mono",
+  display: "swap",
+})
+
+const syne = Syne({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-display",
+  display: "swap",
+})
 
 export const metadata: Metadata = {
-  title: "Trading Profit/Loss Calculator",
-  description: "Calculate your trading profits and losses from CSV data",
-    generator: 'v0.dev'
+  title: "Sprolo — Trading P&L Terminal",
+  description: "Professional trading profit & loss calculator. Analyze CSV trade data instantly.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon.png", type: "image/png", sizes: "32x32" },
+    ],
+    apple: { url: "/apple-touch-icon.png", sizes: "180x180" },
+  },
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <main className="min-h-screen">{children}</main>
-        </ThemeProvider>
+    <html lang="en" className={`dark ${ibmPlexMono.variable} ${syne.variable}`}>
+      <body className={ibmPlexMono.className}>
+        {/* Top navigation */}
+        <nav className="t-nav">
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "8px" }}>
+              <Image src="/logo.png" alt="Sprolo bird logo" width={26} height={20} style={{ objectFit: "contain" }} />
+              <span className="t-nav-logo">SPROLO</span>
+            </Link>
+            <span className="t-nav-tag">v2.0</span>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "28px" }}>
+            <Link href="/" className="t-nav-link">Home</Link>
+            <Link href="/calculate" className="t-nav-link">Calculator</Link>
+            <Link href="/help" className="t-nav-link">Docs</Link>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10px", letterSpacing: "0.1em", color: "var(--t-muted)" }}>
+            <span className="t-status-dot" />
+            LIVE
+          </div>
+        </nav>
+
+        <main style={{ minHeight: "100vh", paddingTop: "44px" }}>
+          {children}
+        </main>
       </body>
     </html>
   )
