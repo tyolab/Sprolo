@@ -51,10 +51,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/help" className="t-nav-link">Docs</Link>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", letterSpacing: "0.1em", color: "var(--t-muted)" }}>
+          {/* <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", letterSpacing: "0.1em", color: "var(--t-muted)" }}>
             <span className="t-status-dot" />
             LIVE
-          </div>
+          </div> */}
         </nav>
 
         <main style={{ minHeight: "100vh", paddingTop: "64px" }}>
