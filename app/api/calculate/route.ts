@@ -20,10 +20,22 @@ function hydrateTrades(input: any) {
     ])
   )
 
+  // The engine uses trades.periods (Set of calendar years) to determine which financial years to
+  // process. Sets serialize to {} in JSON so the value is lost — rebuild it from the transaction dates.
+  const periods = new Set<number>()
+  hydratedSymbols.forEach((transactions: any[]) => {
+    transactions.forEach((tx: any) => {
+      if (tx.date instanceof Date && !isNaN(tx.date.getTime())) {
+        periods.add(tx.date.getFullYear())
+      }
+    })
+  })
+
   return {
     ...serializedTrades,
     symbols: hydratedSymbols,
-    years: new Set(serializedTrades.years || []),
+    periods,                                           // engine key — calendar years for FY processing
+    years: new Set(serializedTrades.years || []),      // kept for UI backwards-compat
     first: serializedTrades.first ? new Date(serializedTrades.first) : null,
     last: serializedTrades.last ? new Date(serializedTrades.last) : null,
     count: serializedTrades.count ?? input?.count ?? 0,
