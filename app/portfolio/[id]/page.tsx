@@ -212,6 +212,13 @@ export default function PortfolioPage() {
             >
               + Recalculate
             </Link>
+            <Link
+              href={`/calculate?target=${portfolio.id}&mode=append`}
+              className="t-btn t-btn-outline t-btn-sm"
+              style={{ display: "flex", alignItems: "center", gap: "6px" }}
+            >
+              + Add Trades
+            </Link>
           </div>
         </div>
 

@@ -51,11 +51,38 @@ function flattenTrades(hydratedTrades: any): Trade[] {
         side: transaction.type,
         quantity: transaction.quantity,
         price: transaction.price,
-        date: transaction.date instanceof Date ? transaction.date.toISOString().slice(0, 10) : String(transaction.date),
+        date: formatTradeDateTime(transaction.date),
         profitLoss: undefined,
       }))
     )
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+}
+
+function formatTradeDateTime(dateLike: Date | string): string {
+  const date = dateLike instanceof Date ? dateLike : new Date(dateLike)
+  if (isNaN(date.getTime())) {
+    return String(dateLike)
+  }
+
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  const hours = String(date.getHours()).padStart(2, "0")
+  const minutes = String(date.getMinutes()).padStart(2, "0")
+
+  return `${year}-${month}-${day} ${hours}:${minutes}`
+}
+
+function getFinancialYearKey(dateLike: Date | string): string | null {
+  const date = dateLike instanceof Date ? dateLike : new Date(dateLike)
+  if (isNaN(date.getTime())) {
+    return null
+  }
+
+  const year = date.getFullYear()
+  const month = date.getMonth()
+  const startYear = month >= 6 ? year : year - 1
+  return `${startYear}-${startYear + 1}`
 }
 
 function buildSymbolSummary(result: any, hydratedTrades: any): SymbolSummary[] {
@@ -93,6 +120,14 @@ function toCalculationResult(result: any, hydratedTrades: any): CalculationResul
     : null
 
   const trades = flattenTrades(hydratedTrades)
+  const financialYearTradeCounts = new Map<string, number>()
+  trades.forEach((trade) => {
+    const fyKey = getFinancialYearKey(trade.date)
+    if (!fyKey) return
+
+    const countKey = `${fyKey}:${trade.symbol}`
+    financialYearTradeCounts.set(countKey, (financialYearTradeCounts.get(countKey) || 0) + 1)
+  })
   const symbolSummary = buildSymbolSummary(result, hydratedTrades)
   const summaryProfit = symbolSummary
     .filter((item) => item.profitLoss > 0)
@@ -145,7 +180,7 @@ function toCalculationResult(result: any, hydratedTrades: any): CalculationResul
         profitGain: Number(s?.total_profit_gain ?? 0),
         profitLoss: Number(s?.total_profit_loss ?? 0),
         discount: Number(s?.total_discount ?? 0),
-        tradeCount: Number(s?.total_trades ?? 0),
+        tradeCount: financialYearTradeCounts.get(`${key}:${symbol}`) ?? Number(s?.total_trades ?? 0),
         cost: Number(s?.total_cost ?? 0),
       })).sort((a, b) => b.profitGain - a.profitGain || a.profitLoss - b.profitLoss)
 
@@ -185,9 +220,15 @@ function toCalculationResult(result: any, hydratedTrades: any): CalculationResul
 }
 
 export async function POST(request: Request) {
+  let requestBody: any = null
+  let hydratedTrades: any = null
+  let rawResult: any = null
+  let result: any = null
+
   try {
-    const { trades, broker = "Any", options } = await request.json()
-    const hydratedTrades = hydrateTrades(trades)
+    requestBody = await request.json()
+    const { trades, broker = "Any", options } = requestBody
+    hydratedTrades = hydrateTrades(trades)
     const requestedBrokerName = normalizeBrokerName(broker)
     const parsedBrokerName = normalizeBrokerName(hydratedTrades?.broker)
     const resolvedBrokerName = requestedBrokerName ?? parsedBrokerName
@@ -203,13 +244,18 @@ export async function POST(request: Request) {
 
     // Process the trades to calculate profit/loss
     // const result = calculateProfitLoss(trades, broker)
-    const rawResult = processTradesWithRecords(hydratedTrades, resolvedBroker, options)
-    const result = toCalculationResult(rawResult, hydratedTrades)
+    rawResult = processTradesWithRecords(hydratedTrades, resolvedBroker, options)
+    result = toCalculationResult(rawResult, hydratedTrades)
 
     return NextResponse.json(result)
   } catch (error) {
     console.error("Error calculating profit/loss:", error)
     return NextResponse.json({ error: "Failed to calculate profit/loss" }, { status: 500 })
+  } finally {
+    result = null
+    rawResult = null
+    hydratedTrades = null
+    requestBody = null
   }
 }
 

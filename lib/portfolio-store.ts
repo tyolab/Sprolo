@@ -7,6 +7,7 @@ export interface Portfolio {
   createdAt: string
   updatedAt: string
   result: CalculationResult
+  sourceTrades?: any
   // Snapshot summaries for sidebar display (avoids re-parsing full result)
   netPnL: number
   tradeCount: number
@@ -52,6 +53,7 @@ export function createPortfolioFromResult(
   existingPortfolios: Portfolio[],
   overrideId?: string,
   overrideName?: string,
+  sourceTrades?: any,
 ): Portfolio {
   const id = overrideId ?? Date.now().toString()
   const index = overrideId
@@ -74,6 +76,7 @@ export function createPortfolioFromResult(
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     result,
+    sourceTrades,
     netPnL: result.netPnL ?? 0,
     tradeCount: trades.length || (result.trades as any)?.count || 0,
     holdingCount: holdings.length,

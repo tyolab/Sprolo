@@ -54,6 +54,13 @@ export default function ResultsDisplay({ results }: ResultsDisplayProps) {
 
   const [activeTab, setActiveTab] = useState<"summary" | "trades">("summary")
   const [selectedYear, setSelectedYear] = useState<string>(defaultYear)
+  const [summarySort, setSummarySort] = useState<{
+    column: "net" | "symbol" | "gain" | "loss"
+    direction: "asc" | "desc"
+  }>({
+    column: "net",
+    direction: "desc",
+  })
 
   const holdings: HoldingEntry[] = Array.isArray(results.holdings)
     ? (results.holdings as any[]).filter((h: any) => h.quantity !== undefined)
@@ -76,11 +83,10 @@ export default function ResultsDisplay({ results }: ResultsDisplayProps) {
   const rawNetPnL = typeof results.netPnL === "number"
     ? results.netPnL : Number(primaryYear?.profit || 0) + Number(primaryYear?.profit_discount || 0)
 
-  const totalProfit   = activeYear ? activeYear.totalProfitGain : rawTotalProfit
-  const totalLoss     = activeYear ? activeYear.totalProfitLoss : rawTotalLoss
-  const netPnL        = activeYear ? activeYear.netPnL          : rawNetPnL
-  const cgtDiscount   = activeYear ? activeYear.profitDiscount  : null
-  const yearTrades    = activeYear ? activeYear.totalTrades      : null
+  const totalProfit   = activeYear ? Number(activeYear.totalProfitGain ?? 0) : Number(rawTotalProfit ?? 0)
+  const totalLoss     = activeYear ? Number(activeYear.totalProfitLoss ?? 0) : Number(rawTotalLoss ?? 0)
+  const netPnL        = activeYear ? Number(activeYear.netPnL ?? 0) : Number(rawNetPnL ?? 0)
+  const cgtDiscount   = activeYear ? Number(activeYear.profitDiscount ?? 0) : null
 
   const isProfit = netPnL >= 0
 
@@ -97,9 +103,57 @@ export default function ResultsDisplay({ results }: ResultsDisplayProps) {
       ? results.symbolSummary
       : []
 
+  const summaryRows = normalizedSymbolSummary.map((s) => {
+    const yr = yearSymbols?.find(y => y.symbol === s.symbol)
+    const gain = yr ? yr.profitGain : (s.profitLoss > 0 ? s.profitLoss : 0)
+    const loss = yr ? yr.profitLoss : (s.profitLoss < 0 ? s.profitLoss : 0)
+    const net = (gain || 0) + (loss || 0)
+    const discount = yr?.discount ?? null
+
+    return {
+      ...s,
+      gain,
+      loss,
+      net,
+      discount,
+    }
+  })
+
+  const sortedSymbolSummary = [...summaryRows].sort((a, b) => {
+    const direction = summarySort.direction === "asc" ? 1 : -1
+
+    switch (summarySort.column) {
+      case "symbol":
+        return a.symbol.localeCompare(b.symbol) * direction
+      case "gain":
+        return (a.gain - b.gain) * direction
+      case "loss":
+        return (a.loss - b.loss) * direction
+      case "net":
+      default:
+        return (a.net - b.net) * direction
+    }
+  })
+
+  const toggleSummarySort = (column: "symbol" | "gain" | "loss") => {
+    setSummarySort((current) => {
+      if (current.column === column) {
+        return {
+          column,
+          direction: current.direction === "asc" ? "desc" : "asc",
+        }
+      }
+
+      return {
+        column,
+        direction: column === "symbol" ? "asc" : "desc",
+      }
+    })
+  }
+
   // Win rate
-  const winCount = normalizedSymbolSummary.filter(s => s.profitLoss >= 0).length
-  const totalSymbols = normalizedSymbolSummary.length
+  const winCount = sortedSymbolSummary.filter(s => s.profitLoss >= 0).length
+  const totalSymbols = sortedSymbolSummary.length
   const winRate = totalSymbols > 0 ? Math.round((winCount / totalSymbols) * 100) : 0
 
   // ── Trades (year-aware) ───────────────────────────────────────
@@ -107,7 +161,9 @@ export default function ResultsDisplay({ results }: ResultsDisplayProps) {
     ? normalizedTrades.filter(t => t.date && getFY(t.date) === activeYear.key)
     : normalizedTrades
 
-  const tradesCount = yearTrades ?? (filteredTrades.length || Number((results.trades as any)?.count || 0))
+  // Use filteredTrades.length as the source of truth — it's year-aware and always accurate.
+  // yearTrades from the engine can be 0 for old portfolios, and 0 ?? x returns 0 (not x).
+  const tradesCount = filteredTrades.length || Number((results.trades as any)?.count || 0)
 
   // ── Download ──────────────────────────────────────────────────
   const downloadResults = (format: "csv" | "json") => {
@@ -348,26 +404,48 @@ export default function ResultsDisplay({ results }: ResultsDisplayProps) {
               <table className="t-table">
                 <thead>
                   <tr>
-                    <th>Symbol</th>
+                    <th>
+                      <button
+                        type="button"
+                        onClick={() => toggleSummarySort("symbol")}
+                        style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", padding: 0 }}
+                      >
+                        Symbol {summarySort.column === "symbol" ? (summarySort.direction === "asc" ? "↑" : "↓") : ""}
+                      </button>
+                    </th>
                     <th style={{ textAlign: "right" }}>Trades</th>
-                    <th style={{ textAlign: "right" }}>Gain</th>
-                    <th style={{ textAlign: "right" }}>Loss</th>
+                    <th style={{ textAlign: "right" }}>
+                      <button
+                        type="button"
+                        onClick={() => toggleSummarySort("gain")}
+                        style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", padding: 0 }}
+                      >
+                        Gain {summarySort.column === "gain" ? (summarySort.direction === "asc" ? "↑" : "↓") : ""}
+                      </button>
+                    </th>
+                    <th style={{ textAlign: "right" }}>
+                      <button
+                        type="button"
+                        onClick={() => toggleSummarySort("loss")}
+                        style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", padding: 0 }}
+                      >
+                        Loss {summarySort.column === "loss" ? (summarySort.direction === "asc" ? "↑" : "↓") : ""}
+                      </button>
+                    </th>
                     <th style={{ textAlign: "right" }}>Net P&amp;L</th>
                     {activeYear && <th style={{ textAlign: "right" }}>CGT Disc.</th>}
                     <th style={{ textAlign: "right" }}>Direction</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {normalizedSymbolSummary.length === 0 ? (
+                  {sortedSymbolSummary.length === 0 ? (
                     <tr><td colSpan={7} style={{ color: "var(--t-muted)", padding: "18px 12px" }}>No data for this period.</td></tr>
                   ) : (
-                    normalizedSymbolSummary.map(s => {
-                      // For year view, pull richer data from yearSymbols
-                      const yr = yearSymbols?.find(y => y.symbol === s.symbol)
-                      const gain = yr ? yr.profitGain : (s.profitLoss > 0 ? s.profitLoss : 0)
-                      const loss = yr ? yr.profitLoss : (s.profitLoss < 0 ? s.profitLoss : 0)
-                      const net  = (gain || 0) + (loss || 0)
-                      const disc = yr?.discount ?? null
+                    sortedSymbolSummary.map(s => {
+                      const gain = s.gain
+                      const loss = s.loss
+                      const net  = s.net
+                      const disc = s.discount
                       return (
                         <tr key={s.symbol}>
                           <td className="sym">{s.symbol}</td>

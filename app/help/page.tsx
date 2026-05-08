@@ -121,18 +121,18 @@ export default function HelpPage() {
 
       <div
         style={{
-          maxWidth: "760px",
+          maxWidth: "1280px",
           margin: "0 auto",
-          padding: "48px 24px",
+          padding: "48px 32px",
           display: "grid",
-          gridTemplateColumns: "1fr 200px",
-          gap: "48px",
+          gridTemplateColumns: "minmax(0, 1fr) 240px",
+          gap: "56px",
           alignItems: "start",
         }}
       >
         {/* Main content */}
         <div>
-          <div className="t-section-label" style={{ marginBottom: "24px" }}>CSV Format Guide</div>
+          <div className="t-section-label" style={{ marginBottom: "24px" }}>Usage Guide</div>
 
           <h1
             style={{
@@ -145,20 +145,123 @@ export default function HelpPage() {
               lineHeight: 1.1,
             }}
           >
-            Data
+            How To
             <br />
-            <span style={{ color: "var(--t-amber)" }}>Format</span>
+            <span style={{ color: "var(--t-amber)" }}>Use Sprolo</span>
           </h1>
 
-          <Section id="required" title="Required Columns">
-            <Para>Your CSV must include these five columns. Column names are case-insensitive.</Para>
+          <Section id="quickstart" title="Quick Start">
+            <Para>Use this flow when you want to create a portfolio from a broker CSV, review the results, and save it for later.</Para>
+            <ul style={{ listStyle: "none", padding: 0, margin: "16px 0 0", display: "flex", flexDirection: "column", gap: "10px" }}>
+              {[
+                "Open Calculator from the home page.",
+                "Choose your broker: CommSec, FP Markets, or Any Broker.",
+                "Under Save to, choose New Portfolio or an existing portfolio.",
+                "Upload CSV or paste trade data.",
+                "Click Calculate Profit / Loss.",
+                "The result is saved as a portfolio and opened automatically.",
+              ].map((step, i) => (
+                <li key={i} style={{ display: "flex", gap: "10px", color: "var(--t-muted)", fontSize: "12px", lineHeight: 1.7 }}>
+                  <span style={{ color: "var(--t-amber)", fontWeight: 700, flexShrink: 0 }}>{i + 1}.</span>
+                  {step}
+                </li>
+              ))}
+            </ul>
+          </Section>
+
+          <Section id="portfolio-modes" title="New, Replace, Or Append">
+            <Para>The calculator supports three save patterns depending on what you are trying to do.</Para>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px", margin: "16px 0" }}>
               {[
-                { col: "symbol", desc: "Ticker symbol (e.g. AAPL, BTC-USD, CBA.AX)" },
-                { col: "side", desc: "Direction — buy or sell" },
+                {
+                  name: "New Portfolio",
+                  note: "Creates a new saved portfolio from the uploaded trades.",
+                },
+                {
+                  name: "Replace",
+                  note: "Recalculates an existing portfolio using only the newly provided trade set.",
+                },
+                {
+                  name: "Append Trades",
+                  note: "Adds new trade rows into an existing portfolio, useful for dropping in the next financial year.",
+                },
+              ].map(({ name, note }) => (
+                <div
+                  key={name}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: "16px",
+                    padding: "10px 14px",
+                    background: "var(--t-surface)",
+                    border: "1px solid var(--t-border)",
+                  }}
+                >
+                  <span style={{ fontSize: "12px", color: "var(--t-amber)", fontWeight: 600, letterSpacing: "0.04em" }}>{name}</span>
+                  <span style={{ fontSize: "11px", color: "var(--t-muted)", textAlign: "right" }}>{note}</span>
+                </div>
+              ))}
+            </div>
+            <Para>From any saved portfolio page, click <strong style={{ color: "var(--t-text)" }}>+ Add Trades</strong> to jump straight into append mode for that portfolio.</Para>
+          </Section>
+
+          <Section id="financial-years" title="Financial Year View">
+            <Para>The results page includes a Tax Year selector above the KPI cards.</Para>
+            <ul style={{ listStyle: "none", padding: 0, margin: "16px 0 0", display: "flex", flexDirection: "column", gap: "8px" }}>
+              {[
+                "All Years shows the full portfolio result.",
+                "Selecting a specific financial year filters the KPI cards, By Symbol table, and All Trades table for that tax year.",
+                "The All Trades tab label shows the filtered trade count for the selected year.",
+                "Current Holdings remains the current portfolio position and is not limited to one year.",
+              ].map((item, i) => (
+                <li key={i} style={{ display: "flex", gap: "10px", color: "var(--t-muted)", fontSize: "12px", lineHeight: 1.7 }}>
+                  <span style={{ color: "var(--t-amber)", fontWeight: 700, flexShrink: 0 }}>
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </Section>
+
+          <Section id="sorting" title="Sorting And Tables">
+            <Para>The results view has two main tables:</Para>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", margin: "16px 0" }}>
+              {[
+                {
+                  name: "By Symbol",
+                  note: "Defaults to Net P&L descending. You can also click Symbol, Gain, or Loss to sort. Symbol toggles ascending first, then descending. Gain and Loss toggle descending first, then ascending.",
+                },
+                {
+                  name: "All Trades",
+                  note: "Shows each trade row with date and time. When a financial year is selected, only trades from that year are shown.",
+                },
+              ].map(({ name, note }) => (
+                <div
+                  key={name}
+                  style={{
+                    padding: "10px 14px",
+                    background: "var(--t-surface)",
+                    border: "1px solid var(--t-border)",
+                  }}
+                >
+                  <div style={{ fontSize: "12px", color: "var(--t-amber)", fontWeight: 600, marginBottom: "6px", letterSpacing: "0.04em" }}>{name}</div>
+                  <div style={{ fontSize: "12px", color: "var(--t-muted)", lineHeight: 1.7 }}>{note}</div>
+                </div>
+              ))}
+            </div>
+          </Section>
+
+          <Section id="required" title="Required Inputs">
+            <Para>If you use Any Broker or paste your own generic data, make sure your fields are shaped like the app expects.</Para>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", margin: "16px 0" }}>
+              {[
+                { col: "symbol", desc: "Ticker symbol, for example AAPL, CBA, or BTC-USD" },
+                { col: "side", desc: "Trade direction: buy or sell" },
                 { col: "quantity", desc: "Number of shares or units traded" },
-                { col: "price", desc: "Execution price per unit (no currency symbols)" },
-                { col: "date", desc: "Trade date in YYYY-MM-DD format" },
+                { col: "price", desc: "Execution price per unit, as a plain number" },
+                { col: "date", desc: "Trade date. For best results use ISO format, and time is supported." },
               ].map(({ col, desc }) => (
                 <div
                   key={col}
@@ -179,18 +282,16 @@ export default function HelpPage() {
           </Section>
 
           <Section id="example" title="Example CSV">
-            <Para>Copy-paste this into the calculator to try it out:</Para>
+            <Para>Use this format when working with generic trade input or paste mode:</Para>
             <CodeBlock>{`symbol,side,quantity,price,date
-AAPL,buy,10,150.25,2023-01-15
-AAPL,sell,10,165.50,2023-02-20
-MSFT,buy,5,280.10,2023-01-10
-MSFT,sell,5,300.75,2023-03-05
-TSLA,buy,3,190.25,2023-02-01
-TSLA,sell,3,210.50,2023-04-10`}</CodeBlock>
+AAPL,buy,10,150.25,2023-01-15 09:30
+AAPL,sell,10,165.50,2023-02-20 15:45
+MSFT,buy,5,280.10,2023-01-10 10:15
+MSFT,sell,5,300.75,2023-03-05 14:05`}</CodeBlock>
           </Section>
 
           <Section id="brokers" title="Broker Formats">
-            <Para>Select the matching broker to automatically map non-standard column names:</Para>
+            <Para>Select the broker that matches your file so the importer can map fields correctly.</Para>
             <div style={{ display: "flex", flexDirection: "column", gap: "8px", margin: "12px 0" }}>
               {[
                 { name: "CommSec", note: "ASX trades export from CommSec's portfolio CSV" },
@@ -218,11 +319,11 @@ TSLA,sell,3,210.50,2023-04-10`}</CodeBlock>
           <Section id="tips" title="Tips">
             <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "8px" }}>
               {[
-                "Ensure your CSV has a header row with exact column names",
-                "Numeric values must be plain numbers — no $, commas, or % symbols",
-                "Dates must be YYYY-MM-DD for reliable parsing",
-                "You can upload multiple CSV files — results are merged",
-                "P&L is calculated FIFO: earliest buy is matched first",
+                "You can upload multiple CSV files in one calculation; the trade sets are merged before processing.",
+                "Append Trades is the right workflow when you want to add a new financial year into an existing saved portfolio.",
+                "The app calculates realized P&L with FIFO matching.",
+                "If a broker export already contains times, the All Trades table will show HH:MM in the Date column.",
+                "Use the portfolio sidebar to reopen saved portfolios later without recalculating from scratch.",
               ].map((tip, i) => (
                 <li
                   key={i}
@@ -252,11 +353,11 @@ TSLA,sell,3,210.50,2023-04-10`}</CodeBlock>
               justifyContent: "space-between",
               padding: "20px 24px",
               border: "1px solid var(--t-border)",
-              background: "rgba(245,163,28,0.03)",
+              background: "rgba(0,122,199,0.06)",
             }}
           >
             <span style={{ fontSize: "12px", color: "var(--t-muted)" }}>
-              Ready to analyze your trades?
+              Ready to create or extend a portfolio?
             </span>
             <Link href="/calculate" className="t-btn t-btn-outline t-btn-sm" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
               Open Calculator <ArrowRight size={12} />
@@ -286,7 +387,11 @@ TSLA,sell,3,210.50,2023-04-10`}</CodeBlock>
             Contents
           </div>
           {[
-            { href: "#required", label: "Required Columns" },
+            { href: "#quickstart", label: "Quick Start" },
+            { href: "#portfolio-modes", label: "New / Replace / Append" },
+            { href: "#financial-years", label: "Financial Year View" },
+            { href: "#sorting", label: "Sorting" },
+            { href: "#required", label: "Required Inputs" },
             { href: "#example", label: "Example CSV" },
             { href: "#brokers", label: "Broker Formats" },
             { href: "#tips", label: "Tips" },

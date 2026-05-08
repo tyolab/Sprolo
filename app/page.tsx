@@ -70,7 +70,7 @@ export default function Home() {
           }}
         />
 
-        <div style={{ maxWidth: "900px", margin: "0 auto", width: "100%" }}>
+        <div style={{ maxWidth: "1180px", margin: "0 auto", width: "100%" }}>
           {/* Label */}
           <div className="t-section-label anim-fade-up anim-delay-1" style={{ marginBottom: "28px" }}>
             Trading Profit &amp; Loss Calculator
@@ -178,7 +178,7 @@ export default function Home() {
           padding: "60px 40px",
         }}
       >
-        <div style={{ maxWidth: "900px", margin: "0 auto" }}>
+        <div style={{ maxWidth: "1180px", margin: "0 auto" }}>
           <div className="t-section-label" style={{ marginBottom: "36px" }}>
             Capabilities
           </div>
@@ -250,25 +250,6 @@ export default function Home() {
             </Link>
           </div>
         </div>
-      </div>
-
-      {/* Footer */}
-      <div
-        style={{
-          borderTop: "1px solid var(--t-border)",
-          padding: "16px 40px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          background: "var(--t-bg)",
-        }}
-      >
-        <span style={{ fontSize: "10px", color: "var(--t-muted)", letterSpacing: "0.08em" }}>
-          SPROLO © {new Date().getFullYear()}
-        </span>
-        <span style={{ fontSize: "10px", color: "var(--t-muted)", letterSpacing: "0.06em" }}>
-          Trading P&amp;L Terminal
-        </span>
       </div>
     </div>
   )

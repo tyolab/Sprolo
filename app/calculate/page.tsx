@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { ArrowLeft, ChevronDown, Plus } from "lucide-react"
 import FileUploadForm from "@/components/file-upload-form"
 import TextInputForm from "@/components/text-input-form"
@@ -21,8 +21,120 @@ const BROKERS: { value: BrokerType; label: string }[] = [
   { value: "Any", label: "Any Broker" },
 ]
 
-export default function CalculatePage() {
+type SaveMode = "replace" | "append"
+
+function rebuildSourceTradesFromPortfolio(portfolio?: Portfolio | undefined) {
+  const existingTrades = Array.isArray(portfolio?.result?.trades) ? portfolio.result.trades : []
+  if (existingTrades.length === 0) {
+    return null
+  }
+
+  const symbolsMap = new Map<string, any[]>()
+  const years = new Set<number>()
+  let first: string | null = null
+  let last: string | null = null
+
+  for (const trade of existingTrades) {
+    const symbol = trade?.symbol
+    const date = trade?.date
+    if (!symbol || !date) continue
+
+    const parsedDate = new Date(date)
+    if (isNaN(parsedDate.getTime())) continue
+
+    years.add(parsedDate.getFullYear())
+    const isoDate = parsedDate.toISOString()
+    if (!first || parsedDate.getTime() < new Date(first).getTime()) first = isoDate
+    if (!last || parsedDate.getTime() > new Date(last).getTime()) last = isoDate
+
+    const current = symbolsMap.get(symbol) || []
+    current.push({
+      symbol,
+      type: trade.side,
+      quantity: trade.quantity,
+      price: trade.price,
+      date: isoDate,
+    })
+    symbolsMap.set(symbol, current)
+  }
+
+  if (symbolsMap.size === 0) {
+    return null
+  }
+
+  return {
+    count: existingTrades.length,
+    broker: portfolio?.broker || null,
+    trades: {
+      count: existingTrades.length,
+      broker: portfolio?.broker || null,
+      years: Array.from(years).sort(),
+      symbols: Array.from(symbolsMap.entries()),
+      first,
+      last,
+    },
+  }
+}
+
+function toSerializedTradeBundle(input: any) {
+  const serializedTrades = input?.trades ? input.trades : input
+
+  return {
+    count: serializedTrades?.count ?? input?.count ?? 0,
+    broker: serializedTrades?.broker ?? input?.broker ?? null,
+    trades: {
+      ...serializedTrades,
+      count: serializedTrades?.count ?? input?.count ?? 0,
+      broker: serializedTrades?.broker ?? input?.broker ?? null,
+      years: Array.isArray(serializedTrades?.years) ? serializedTrades.years : [],
+      symbols: Array.isArray(serializedTrades?.symbols) ? serializedTrades.symbols : [],
+      first: serializedTrades?.first ?? null,
+      last: serializedTrades?.last ?? null,
+    },
+  }
+}
+
+function mergeSerializedTradeInputs(existingInput: any, incomingInput: any) {
+  const existing = toSerializedTradeBundle(existingInput)
+  const incoming = toSerializedTradeBundle(incomingInput)
+
+  const mergedSymbols = new Map<string, any[]>()
+
+  for (const [symbol, transactions] of [...existing.trades.symbols, ...incoming.trades.symbols]) {
+    const current = mergedSymbols.get(symbol) || []
+    mergedSymbols.set(symbol, current.concat(transactions || []))
+  }
+
+  mergedSymbols.forEach((transactions, symbol) => {
+    mergedSymbols.set(
+      symbol,
+      [...transactions].sort((a, b) => new Date(a?.date ?? 0).getTime() - new Date(b?.date ?? 0).getTime())
+    )
+  })
+
+  const mergedYears = Array.from(new Set([...(existing.trades.years || []), ...(incoming.trades.years || [])])).sort()
+  const firstDates = [existing.trades.first, incoming.trades.first].filter(Boolean).map((value) => new Date(value))
+  const lastDates = [existing.trades.last, incoming.trades.last].filter(Boolean).map((value) => new Date(value))
+
+  return {
+    count: Number(existing.count || 0) + Number(incoming.count || 0),
+    broker: incoming.broker || existing.broker,
+    trades: {
+      ...existing.trades,
+      ...incoming.trades,
+      count: Number(existing.count || 0) + Number(incoming.count || 0),
+      broker: incoming.broker || existing.broker,
+      years: mergedYears,
+      symbols: Array.from(mergedSymbols.entries()),
+      first: firstDates.length > 0 ? new Date(Math.min(...firstDates.map((date) => date.getTime()))).toISOString() : null,
+      last: lastDates.length > 0 ? new Date(Math.max(...lastDates.map((date) => date.getTime()))).toISOString() : null,
+    },
+  }
+}
+
+function CalculateContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedBroker, setSelectedBroker] = useState<BrokerType>("Any")
@@ -30,20 +142,45 @@ export default function CalculatePage() {
   const [portfolios, setPortfolios] = useState<Portfolio[]>([])
   // "new" = create new portfolio, or a portfolio id = overwrite that one
   const [targetPortfolioId, setTargetPortfolioId] = useState<string>("new")
+  const [saveMode, setSaveMode] = useState<SaveMode>("replace")
 
   useEffect(() => {
-    setPortfolios(loadPortfolios())
-  }, [])
+    const currentPortfolios = loadPortfolios()
+    setPortfolios(currentPortfolios)
+
+    const queryTarget = searchParams.get("target")
+    const queryMode = searchParams.get("mode")
+
+    if (queryTarget && currentPortfolios.some((portfolio) => portfolio.id === queryTarget)) {
+      setTargetPortfolioId(queryTarget)
+      if (queryMode === "append" || queryMode === "replace") {
+        setSaveMode(queryMode)
+      }
+    }
+  }, [searchParams])
 
   const handleCalculate = async (data: any) => {
     setIsLoading(true)
     setError(null)
 
     try {
+      const currentList = loadPortfolios()
+      const isOverwrite = targetPortfolioId !== "new"
+      const existing = isOverwrite ? currentList.find((p) => p.id === targetPortfolioId) : undefined
+
+      let calculationInput = data
+      if (isOverwrite && saveMode === "append") {
+        const baseTrades = existing?.sourceTrades || rebuildSourceTradesFromPortfolio(existing)
+        if (!baseTrades) {
+          throw new Error("This portfolio does not contain usable trade history for append mode.")
+        }
+        calculationInput = mergeSerializedTradeInputs(baseTrades, data)
+      }
+
       const response = await fetch("/api/calculate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ trades: data, broker: selectedBroker }),
+        body: JSON.stringify({ trades: calculationInput, broker: selectedBroker }),
       })
 
       if (!response.ok) {
@@ -53,20 +190,17 @@ export default function CalculatePage() {
 
       const result: CalculationResult = await response.json()
 
-      // Determine if we're overwriting or creating
-      const isOverwrite = targetPortfolioId !== "new"
-      const existing = isOverwrite ? portfolios.find((p) => p.id === targetPortfolioId) : undefined
-      const currentList = loadPortfolios()
-
       const portfolio = createPortfolioFromResult(
         result,
         selectedBroker,
         currentList,
         isOverwrite ? targetPortfolioId : undefined,
         existing?.name,
+        calculationInput,
       )
 
       savePortfolio(portfolio)
+      window.dispatchEvent(new CustomEvent("portfolios-updated"))
       router.push(`/portfolio/${portfolio.id}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred")
@@ -76,6 +210,7 @@ export default function CalculatePage() {
   }
 
   const hasPortfolios = portfolios.length > 0
+  const isExistingTarget = targetPortfolioId !== "new"
 
   return (
     <div style={{ display: "flex", minHeight: "calc(100vh - 64px)" }}>
@@ -156,7 +291,7 @@ export default function CalculatePage() {
         </div>
 
         {/* Form area */}
-        <div style={{ maxWidth: "720px", margin: "0 auto", width: "100%", padding: "32px 28px" }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto", width: "100%", padding: "32px 32px" }}>
           {/* Portfolio target selector */}
           <div
             style={{
@@ -213,6 +348,25 @@ export default function CalculatePage() {
                 </button>
               ))}
             </div>
+
+            {isExistingTarget && (
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  onClick={() => setSaveMode("replace")}
+                  className={`t-btn t-btn-sm ${saveMode === "replace" ? "t-btn-primary" : "t-btn-ghost"}`}
+                >
+                  Replace
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSaveMode("append")}
+                  className={`t-btn t-btn-sm ${saveMode === "append" ? "t-btn-outline" : "t-btn-ghost"}`}
+                >
+                  Append Trades
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Terminal window */}
@@ -301,5 +455,13 @@ export default function CalculatePage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function CalculatePage() {
+  return (
+    <Suspense fallback={null}>
+      <CalculateContent />
+    </Suspense>
   )
 }

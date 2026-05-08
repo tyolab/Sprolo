@@ -7,17 +7,17 @@
   .dark {
     /* TYO Lab reference palette */
     --background: 227 35% 12%;
-    --foreground: 217 24% 86%;
+    --foreground: 210 28% 94%;
     --card: 228 31% 12%;
-    --card-foreground: 217 24% 86%;
+    --card-foreground: 210 28% 94%;
     --popover: 228 31% 12%;
-    --popover-foreground: 217 24% 86%;
+    --popover-foreground: 210 28% 94%;
     --primary: 203 100% 39%;
     --primary-foreground: 0 0% 100%;
     --secondary: 179 100% 44%;
     --secondary-foreground: 227 35% 12%;
     --muted: 226 19% 20%;
-    --muted-foreground: 220 5% 56%;
+    --muted-foreground: 220 10% 72%;
     --accent: 179 100% 44%;
     --accent-foreground: 227 35% 12%;
     --destructive: 329 74% 55%;
@@ -29,8 +29,8 @@
     --chart-1: 203 100% 39%;
     --chart-2: 179 100% 44%;
     --chart-3: 329 74% 55%;
-    --chart-4: 217 24% 86%;
-    --chart-5: 220 5% 56%;
+    --chart-4: 210 28% 94%;
+    --chart-5: 220 10% 72%;
 
     /* Semantic UI tokens */
     --t-amber: #007ac7;
@@ -39,8 +39,8 @@
     --t-bg: #000000;
     --t-surface: #15192b;
     --t-border: #2d3041;
-    --t-text: #d4dae3;
-    --t-muted: #8b8e93;
+    --t-text: #f2f6fb;
+    --t-muted: #b6c0cd;
   }
 }
 
@@ -413,6 +413,7 @@
 }
 
 /* ─── Form elements ───────────────────────────────────────────── */
+.t-input,
 .t-textarea {
   width: 100%;
   background: var(--t-bg);
@@ -427,12 +428,19 @@
   line-height: 1.5;
 }
 
+.t-input {
+  height: 44px;
+  resize: none;
+}
+
+.t-input:focus,
 .t-textarea:focus {
   outline: none;
   border-color: var(--t-amber);
   box-shadow: 0 0 0 1px rgba(0, 122, 199, 0.25);
 }
 
+.t-input::placeholder,
 .t-textarea::placeholder {
   color: var(--t-muted);
 }
